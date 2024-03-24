@@ -25,7 +25,7 @@ static const size_t MAX_STACKED_WIDGET_COUNT = 8;
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle(tr("慧文数字化平台"));
+    this->setWindowTitle(tr("数字中心"));
 
     // 初始化菜单栏
     initMenu();

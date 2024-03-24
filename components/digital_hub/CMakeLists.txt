@@ -10,7 +10,7 @@ else ()
 	MESSAGE(status "It is Other OS (not windows|UNIX-like)")
 endif ()
 
-project(wd-digital-system VERSION 0.1 LANGUAGES CXX)
+project(digital_hub VERSION 0.1 LANGUAGES CXX)
 
 message("set output dir(must set in root CMakeLists.txt)")
 # 设置静态库的输出目录
