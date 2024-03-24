@@ -1,0 +1,50 @@
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+build
+dist
+
+# Qt
+build-wtool-*
+build-wdChat-*
+build-wd-digital-system-*
+
+# Visual Studio Code
+.vscode
+
+# Visual Studio
+.vs
+
+# bin
+output/bin/logs
+outputbin/script/__pycache__
+output/bin/platforms
+output/bin/Qt6*
+
+# python 
+__pycache__
+*.spec
+
+# unity
+wd-digital-man/*
+# Unity 编辑器中创建的资产，例如游戏对象、脚本、贴图、音频文件等等。
+!wd-digital-man/Assets/
+# Unity 编辑器设置，例如输入设置、渲染设置、聚光灯设置等等。
+!wd-digital-man/ProjectSettings/
+# Unity Package Manager 安装的所有软件包
+!wd-digital-man/Packages/
+
+#Other
+logs
+*.log
+plugin/reactor_server/bin

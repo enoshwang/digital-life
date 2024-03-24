@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1080</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="qrc/main.qrc">:/home_page.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1080</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>通讯</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionOnlineRoom"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>数据分析</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionbrowser"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>多媒体</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionwd_player"/>
+    <addaction name="separator"/>
+    <addaction name="actionimageViewer"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>慧文</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionmain_page"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menu_4"/>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+   <addaction name="menu_3"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="statusTip">
+    <string/>
+   </property>
+   <property name="whatsThis">
+    <string>与服务器连接状态</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+  </widget>
+  <action name="actionOnlineRoom">
+   <property name="text">
+    <string>慧文在线聊天室</string>
+   </property>
+  </action>
+  <action name="actionbrowser">
+   <property name="text">
+    <string>浏览器数据分析</string>
+   </property>
+  </action>
+  <action name="actionwd_player">
+   <property name="text">
+    <string>慧文播放器</string>
+   </property>
+  </action>
+  <action name="actionmain_page">
+   <property name="text">
+    <string>主页</string>
+   </property>
+  </action>
+  <action name="actionimageViewer">
+   <property name="text">
+    <string>图像查看器</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="qrc/main.qrc"/>
+ </resources>
+ <connections/>
+ <slots>
+  <slot>onWDSendClicked()</slot>
+ </slots>
+</ui>
