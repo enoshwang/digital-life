@@ -22,6 +22,11 @@ Player::Player(QWidget *parent) :
 
     // video widget
     m_player = new QMediaPlayer(this);
+    //
+    ui->videoWidget->setPlayer(m_player);
+    ui->videoWidget->setComBox(this->ui->comboBox);
+
+
     m_audioOutput = new QAudioOutput(this);
     m_player->setAudioOutput(m_audioOutput);
     m_player->setVideoOutput(ui->videoWidget);
@@ -115,32 +120,15 @@ Player::Player(QWidget *parent) :
             });
 
     // playback rate
-    connect(ui->comboBox,QOverload<int>::of(&QComboBox::activated),this,[this]()
+    connect(ui->comboBox,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this]()
             {
-                auto playbackSpeedStr = this->ui->comboBox->currentText();
-                double playbackSpeed = 1.0;
-                if(playbackSpeedStr == "1.0x")
-                    playbackSpeed = 1.0;
-                else if(playbackSpeedStr == "0.1x")
-                    playbackSpeed = 0.1;
-                else if(playbackSpeedStr == "0.5x")
-                    playbackSpeed = 0.5;
-                else if(playbackSpeedStr == "1.5x")
-                    playbackSpeed = 1.5;
-                else if(playbackSpeedStr == "2.0x")
-                    playbackSpeed = 2.0;
-                else if(playbackSpeedStr == "3.0x")
-                    playbackSpeed = 3.0;
-                else if(playbackSpeedStr == "5.0x")
-                    playbackSpeed = 5.0;
-                else if(playbackSpeedStr == "10.0x")
-                    playbackSpeed = 10.0;
+                auto playbackSpeed = this->ui->comboBox->currentText().removeLast().toDouble();
+                SPDLOG_INFO("Set playback rate:{0}.",playbackSpeed);
                 this->m_player->setPlaybackRate(playbackSpeed);
-                SPDLOG_INFO("set playback rate:{0}",playbackSpeed);
             });
 
     // full screen
-    connect(ui->pushButtonFullScreen, &QPushButton::clicked, this, [this](){
+    connect(ui->pushButtonFullScreen, &QPushButton::clicked, this, [this]() {
         this->ui->videoWidget->setFullScreen(true);
     });
 
@@ -330,22 +318,23 @@ void Player::updateDurationInfo(qint64 currentInfo)
 
 bool Player::eventFilter(QObject *watched, QEvent *event)
 {
-    SPDLOG_INFO("dsadsa");
+    SPDLOG_INFO("Start Player::eventFilter");
     if (watched == ui->videoWidget && event->type() == QEvent::MouseButtonDblClick)
     {
-        SPDLOG_INFO("dsadsa2222");
+        SPDLOG_INFO("mouse button dbl click on video widget");
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
         if (mouseEvent->button() == Qt::LeftButton)
         {
-            SPDLOG_INFO("dsadsa3333");
+            SPDLOG_INFO("mouse button click on left button");
             if(ui->videoWidget->isFullScreen())
             {
-                SPDLOG_INFO("dsadsa4444");
+                SPDLOG_INFO("mouse button click on left button,and now is full screen,will exit full screen");
                 ui->videoWidget->setFullScreen(false);
             }
             return true;
         }
     }
+
     return QWidget::eventFilter(watched, event);
 }
 

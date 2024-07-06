@@ -201,6 +201,11 @@
          </item>
          <item>
           <property name="text">
+           <string>1.2x</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>1.5x</string>
           </property>
          </item>
