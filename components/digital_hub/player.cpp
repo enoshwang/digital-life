@@ -13,19 +13,16 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
 
-Player::Player(QWidget *parent) :
-      QWidget(parent),
-      ui(new Ui::Player)
+Player::Player(QWidget *parent) :QWidget(parent,Qt::Window),ui(new Ui::Player)
 {
-    SPDLOG_INFO("new Player");
+    SPDLOG_INFO("Start Player::Player");
     ui->setupUi(this);
 
-    // video widget
+    // 视频播放器
     m_player = new QMediaPlayer(this);
-    //
+    // 设置 video widget
     ui->videoWidget->setPlayer(m_player);
     ui->videoWidget->setComBox(this->ui->comboBox);
-
 
     m_audioOutput = new QAudioOutput(this);
     m_player->setAudioOutput(m_audioOutput);

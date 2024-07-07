@@ -34,6 +34,9 @@ private slots:
     // 数据分析
     void slotActionBroswerDataTrigger();
 
+    // 窗口切换
+    void toggle_windows(QWidget*);
+
 private:
     void initMenu();
 

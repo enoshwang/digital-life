@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include <map>
 #include "./ui_mainwindow.h"
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
@@ -98,28 +97,16 @@ MainWindow::~MainWindow()
 
 void MainWindow::slotsActionPlayerTrigger()
 {
-    SPDLOG_INFO("slots action Player trigger");
+    SPDLOG_INFO("Slots action Player trigger");
     try
     {
         if(!this->player)
         {
-            SPDLOG_INFO("new player");
+            SPDLOG_INFO("New player");
             player = std::make_unique<Player>(this);
-            m_stackedwidget->addWidget(player.get());
-            m_widgetIndex.emplace_back("player"s,m_widgetIndex.size());
-            for(auto& i:m_widgetIndex)
-            {
-                SPDLOG_INFO("key:{0},value:{1}",i.first,i.second);
-            }
         }
-        for(const auto& i: m_widgetIndex)
-        {
-            if(i.first == "player"s)
-            {
-                m_stackedwidget->setCurrentIndex(i.second);
-                SPDLOG_INFO("set current index:{0},widget name:{1}",i.second,i.first);
-            }
-        }
+
+        this->toggle_windows(player.get());
     }
     catch (std::exception& e)
     {
@@ -176,6 +163,15 @@ void MainWindow::slotActionBroswerDataTrigger()
 {
     auto browserDataWidget = new BrowserDataAnalysis(this);
     browserDataWidget->show();
+}
+
+void MainWindow::toggle_windows(QWidget* window)
+{
+    SPDLOG_INFO("Toggle windows:{0}",window->windowTitle().toStdString());
+    if(window->isVisible())
+        window->hide();
+    else
+        window->show();
 }
 
 void MainWindow::initMenu()

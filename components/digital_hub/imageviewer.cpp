@@ -11,9 +11,7 @@
 #include <QColorSpace>
 #include <QLabel>
 
-ImageViewer::ImageViewer(QWidget *parent) :
-      QMainWindow(parent),
-      ui(new Ui::ImageViewer)
+ImageViewer::ImageViewer(QWidget *parent):QMainWindow(parent),ui(new Ui::ImageViewer)
 {
     ui->setupUi(this);
 
