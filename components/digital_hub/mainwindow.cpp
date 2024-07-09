@@ -26,6 +26,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->setupUi(this);
     this->setWindowTitle(tr("数字中心"));
 
+    // 自适应分辨率与缩放，界面占据屏幕的一半进行展示
+    auto screen = QGuiApplication::primaryScreen();
+    auto screen_geometry = screen->geometry();
+    auto screen_width = screen_geometry.width();
+    auto screen_height = screen_geometry.height();
+    SPDLOG_INFO("Primary screen width:{0},screen height:{1}",screen_width,screen_height);
+    this->resize(screen_width / 2, screen_height / 2);
+
     // 初始化菜单栏
     initMenu();
 

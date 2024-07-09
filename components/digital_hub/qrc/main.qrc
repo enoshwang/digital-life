@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>main.ico</file>
         <file>home_page.png</file>
+        <file>pause-2935459.png</file>
+        <file>play-2935460.png</file>
     </qresource>
 </RCC>
