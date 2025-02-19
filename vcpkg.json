@@ -1,0 +1,25 @@
+{
+    "name": "digital-life",
+    "version": "1.0.0",
+    "features": {
+        "client":{
+            "description": "Build the client",
+            "dependencies": [
+                "ffmpeg",
+                "opencv",
+                {
+                    "name": "asio",
+                    "default-features": false,
+                    "features": ["header-only"]
+                }
+            ]
+        },
+        "server": {
+            "description": "Build the client"
+          },
+          "tests": {
+            "description": "Build the tests",
+            "dependencies": [ "gtest" ]
+          }
+    }
+}

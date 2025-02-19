@@ -44,6 +44,9 @@ wd-digital-man/*
 # Unity Package Manager 安装的所有软件包
 !wd-digital-man/Packages/
 
+#vcpkg
+vcpkg_installed
+
 #Other
 logs
 *.log
