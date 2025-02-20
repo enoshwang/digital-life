@@ -3,7 +3,7 @@ message("start cmake")
 
 if(WIN32)
 	message(STATUS "It is windows")
-	#SET(CMAKE_TOOLCHAIN_FILE "E:/code/vcpkg/vcpkg-windows/scripts/buildsystems/vcpkg.cmake")
+	#SET(CMAKE_TOOLCHAIN_FILE "C:/Users/enosh/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake")
 elseif (UNIX)
 	MESSAGE(STATUS "It is UNIX-like OS's.")
 else ()
