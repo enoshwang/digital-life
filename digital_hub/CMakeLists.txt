@@ -22,8 +22,7 @@ message("set output dir(must set in root CMakeLists.txt)")
 
 # include
 include_directories(
-    ${CMAKE_SOURCE_DIR}/../../common/wdcommon/include
-    ${CMAKE_SOURCE_DIR}/../../3rdparty/include
+    ${CMAKE_SOURCE_DIR}/3rdparty/include
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
