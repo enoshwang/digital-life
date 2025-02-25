@@ -30,7 +30,7 @@
        <bool>false</bool>
       </property>
       <property name="alignment">
-       <set>Qt::AlignCenter</set>
+       <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -79,10 +79,17 @@
     <addaction name="actionmain_page"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuAI">
+    <property name="title">
+     <string>AI+</string>
+    </property>
+    <addaction name="actionAI_Chat"/>
+   </widget>
    <addaction name="menu_4"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
+   <addaction name="menuAI"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
    <property name="statusTip">
@@ -118,6 +125,11 @@
   <action name="actionimageViewer">
    <property name="text">
     <string>图像查看器</string>
+   </property>
+  </action>
+  <action name="actionAI_Chat">
+   <property name="text">
+    <string>AI+Chat</string>
    </property>
   </action>
  </widget>

@@ -15,7 +15,6 @@
 #include <QFileDialog>
 #include <QFile>
 
-#include <chrono>
 #include <string>
 using namespace std::string_literals;
 using namespace std::chrono_literals;
@@ -64,13 +63,13 @@ void Client::initForm()
     ui->sendTextEdit->installEventFilter(this);
 
     //字号
-    connect(ui->fontSizeBtn,&QPushButton::clicked,this,[=]()
+    connect(ui->fontSizeBtn,&QPushButton::clicked,this,[this]()
             {
                 bool ok = true;
                 auto f = QFontDialog::getFont(&ok);
                 if(ok)
                 {
-                    ui->txtMain->setFont(f);
+                    this->ui->txtMain->setFont(f);
                 }
             });
     connect(ui->sendFileBtn,&QPushButton::clicked,this,&Client::btnSendFileClicked);

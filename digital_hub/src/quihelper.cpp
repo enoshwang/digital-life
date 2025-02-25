@@ -160,7 +160,7 @@ void QUIHelper:: initClientConfig()
         auto j_content = nlohmann::json::parse(file_contents);
         if(j_content.contains("serverIp") && j_content["serverIp"].is_string() && j_content.contains("serverPort") && j_content["serverPort"].is_number())
         {
-            m_client_config.ip = j_content["serverIp"];
+            m_client_config.ip = j_content["serverIp"].get<std::string>();
             m_client_config.port = j_content["serverPort"];
         }
     }
