@@ -18,21 +18,8 @@
 
 using namespace std::string_literals;
 
-inline const std::string EW_COMMON_VERSION{"0.1.0"s};
-
-namespace wd {
-namespace common {
-/**
- * @brief eGetVersion
- * @param
- * @return string for ewcommon version
- */
-inline std::string eGetVersion() noexcept
-{
-    std::string str;
-    str = EW_COMMON_VERSION;
-    return str;
-}
+namespace ew {
+namespace my_utils {
 /**
  * @brief getThreadIdOfString
  * @param id
@@ -91,4 +78,4 @@ inline bool isLittleEndian() noexcept
         return false;
 }
 }  // namespace common
-}  // namespace wd
+}  // namespace ew
