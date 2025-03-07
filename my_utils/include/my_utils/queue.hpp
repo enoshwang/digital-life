@@ -4,14 +4,14 @@
 #include <mutex>
 #include <queue>
 
-namespace wd {
-namespace common {
+namespace ew {
+namespace my_utils {
 
 template <typename T>
-class EWQueue
+class Queue
 {
 public:
-    EWQueue()
+    Queue()
     {
     }
 
@@ -60,5 +60,5 @@ private:
     std::condition_variable m_condition{};
 };
 
-}  // namespace common
-}  // namespace wd
+}  // namespace my_utils
+}  // namespace ew

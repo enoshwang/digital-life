@@ -10,6 +10,10 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 add_library(${PROJECT_NAME} STATIC
             ${SOURCES} 
             include/my_utils/utils.hpp
+            include/my_utils/log.hpp
+            include/my_utils/obj_pool.hpp
+            include/my_utils/queue.hpp
+            include/my_utils/singleton.hpp
             )
 
 target_include_directories(${PROJECT_NAME}
@@ -43,5 +47,5 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-add_executable(example examples/demo.cpp)
+add_executable(example examples/demo.cpp examples/demo_redefine.cpp)
 target_link_libraries(example PRIVATE my_utils)

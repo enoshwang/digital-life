@@ -8,6 +8,14 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <map>
+
+#include <my_utils/filesystem.hpp>
+#include <my_utils/log.hpp>
+#include <my_utils/obj_pool.hpp>
+#include <my_utils/queue.hpp>
+#include <my_utils/singleton.hpp>
+#include <my_utils/uuid.hpp>
 
 #ifdef unix
 #include <sys/types.h>
@@ -20,6 +28,23 @@ using namespace std::string_literals;
 
 namespace ew {
 namespace my_utils {
+
+enum class Errno : int {
+    SUCCESS = 0,  // It's Ok
+    NOENTRY = 1,  // No such file or directory
+    CENTRYF = 2,  // Create file or directory failed
+
+    FORKERR = 3  // fork error
+};
+
+static const std::map<Errno, std::string> ERRNO_MSG{
+    {Errno::SUCCESS, "It's Ok."},
+    {Errno::NOENTRY, " No such file or directory."},
+    {Errno::CENTRYF, "Create file or directory failed."},
+    {Errno::FORKERR, "fork error."}
+
+};
+
 /**
  * @brief getThreadIdOfString
  * @param id
@@ -77,5 +102,5 @@ inline bool isLittleEndian() noexcept
     else
         return false;
 }
-}  // namespace common
+}  // namespace my_utils
 }  // namespace ew

@@ -3,11 +3,11 @@
 #include <memory>
 #include <mutex>
 
-namespace wd {
-namespace common {
+namespace ew {
+namespace my_utils {
 
 template <typename T>
-class EWSingleton final
+class Singleton final
 {
 public:
     template <typename... Args>
@@ -26,13 +26,13 @@ public:
     }
 
 private:
-    EWSingleton()                               = default;
-    EWSingleton(const EWSingleton &)            = delete;
-    EWSingleton &operator=(const EWSingleton &) = delete;
-    EWSingleton(EWSingleton &&)                 = delete;
-    EWSingleton &operator=(EWSingleton &&)      = delete;
-    ~EWSingleton()                              = default;
+    Singleton()                               = default;
+    Singleton(const Singleton &)            = delete;
+    Singleton &operator=(const Singleton &) = delete;
+    Singleton(Singleton &&)                 = delete;
+    Singleton &operator=(Singleton &&)      = delete;
+    ~Singleton()                              = default;
 };
 
-}  // namespace common
-}  // namespace wd
+}  // namespace my_utils
+}  // namespace ew

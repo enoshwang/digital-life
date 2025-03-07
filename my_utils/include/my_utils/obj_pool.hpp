@@ -5,22 +5,22 @@
 #include <memory>
 #include <mutex>
 
-namespace wd {
-namespace common {
+namespace ew {
+namespace my_utils {
 
-class EWObjectPoolBase
+class ObjectPoolBase
 {
 protected:
-    EWObjectPoolBase(/* args */)                          = default;
-    virtual ~EWObjectPoolBase()                           = default;
-    EWObjectPoolBase(const EWObjectPoolBase &)            = default;
-    EWObjectPoolBase &operator=(const EWObjectPoolBase &) = default;
-    EWObjectPoolBase(EWObjectPoolBase &&)                 = default;
-    EWObjectPoolBase &operator=(EWObjectPoolBase &&)      = default;
+    ObjectPoolBase(/* args */)                          = default;
+    virtual ~ObjectPoolBase()                           = default;
+    ObjectPoolBase(const ObjectPoolBase &)            = default;
+    ObjectPoolBase &operator=(const ObjectPoolBase &) = default;
+    ObjectPoolBase(ObjectPoolBase &&)                 = default;
+    ObjectPoolBase &operator=(ObjectPoolBase &&)      = default;
 };
 
 template <typename T, size_t N>
-class EWObjectPool final : public EWObjectPoolBase
+class ObjectPool final : public ObjectPoolBase
 {
 public:
     using DeleterType = std::function<void(T *)>;
@@ -53,19 +53,19 @@ public:
     }
 
 public:
-    EWObjectPool()
+    ObjectPool()
     {
         static_assert(N < 500, "init pool size is out of range");
         for (size_t i{0}; i < N; ++i) {
             _pool.push_back(std::make_unique<T>());
         }
     }
-    ~EWObjectPool() = default;
+    ~ObjectPool() = default;
 
 private:
     std::deque<std::unique_ptr<T>> _pool;
     static std::mutex              _Mutex;
 };
 
-}  // namespace common
-}  // namespace wd
+}  // namespace my_utils
+}  // namespace ew

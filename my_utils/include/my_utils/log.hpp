@@ -3,8 +3,8 @@
 #include <iostream>
 #include <source_location>
 
-namespace wd {
-namespace common {
+namespace ew {
+namespace my_utils {
 
 template <typename... Args>
 class Log
@@ -28,5 +28,5 @@ public:
 template <typename... Args>
 Log(Args...) -> Log<Args...>;
 
-}  // namespace common
-}  // namespace wd
+}  // namespace my_utils
+}  // namespace ew

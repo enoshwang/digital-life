@@ -3,10 +3,10 @@
 #include <chrono>
 #include <string_view>
 
-namespace wd {
-namespace common {
+namespace ew {
+namespace my_utils {
 
-class EWTimer
+class Timer
 {
 private:
     std::chrono::high_resolution_clock             clock;
@@ -14,11 +14,11 @@ private:
     std::string_view                               tag;
 
 public:
-    EWTimer(std::string_view sv) : tag(sv)
+    Timer(std::string_view sv) : tag(sv)
     {
         createTime = clock.now();
     }
-    ~EWTimer()
+    ~Timer()
     {
         auto endTime  = clock.now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -30,10 +30,10 @@ public:
 
 #define OPEN_EW_AUTO_TIME
 #ifdef OPEN_EW_AUTO_TIME
-#define EW_AUTO_TIME(msg) EWTimer ewAutoTimer = EWTimer(msg)
+#define EW_AUTO_TIME(msg) Timer ewAutoTimer = Timer(msg)
 #else
 #define EW_AUTO_TIME
 #endif
 
-}  // namespace common
-}  // namespace wd
+}  // namespace my_utils
+}  // namespace ew

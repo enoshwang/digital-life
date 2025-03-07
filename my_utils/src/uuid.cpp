@@ -1,13 +1,6 @@
-#pragma once
+#include <my_utils/uuid.hpp>
 
-#include <random>
-#include <sstream>
-#include <string>
-
-namespace wd {
-namespace common {
-
-inline std::string generate_uuid_v4(bool with_bar = false)
+inline std::string ew::my_utils::generate_uuid_v4(bool with_bar)
 {
     static std::random_device              rd;
     static std::mt19937_64                 gen(rd());
@@ -47,6 +40,3 @@ inline std::string generate_uuid_v4(bool with_bar = false)
     };
     return ss.str();
 }
-
-}  // namespace common
-}  // namespace wd
