@@ -8,9 +8,10 @@
 
 #include "common_proto.hpp"
 #include "reactor.hpp"
-#include "wdcommon.hpp"
 
-extern wd::common::EWQueue<OnlineChatRoomMessage> g_ocr_msg_queue;
+#include <my_utils/utils.hpp>
+
+extern ew::my_utils::Queue<OnlineChatRoomMessage> g_ocr_msg_queue;
 
 std::unordered_map<int, OCRClientInfo> g_ocr_client_info_map;
 
@@ -81,7 +82,7 @@ void OnlineChatRoom::handleTextMsg(const OnlineChatRoomMessage& msg, Reactor* re
         if (j["sender"] == "client")
         {
             OCRClientInfo clientInfo;
-            clientInfo.m_username           = j["content"];
+            clientInfo.m_username           = j["content"].get<std::string>();
             g_ocr_client_info_map[msg.m_fd] = clientInfo;
             SPDLOG_INFO("OnlineChatRoom: set client info. fd:{0},username:{1}", msg.m_fd, clientInfo.m_username);
         }

@@ -6,19 +6,18 @@
 #include "common.hpp"
 #include "reactor.hpp"
 #include "util.hpp"
-#include "wdcommon.hpp"
 #include "onlineChatRoom.hpp"
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
 
+#include <my_utils/utils.hpp>
+
 using namespace std::string_literals;
 
-
-wd::common::EWQueue<OnlineChatRoomMessage> g_ocr_msg_queue;
+ew::my_utils::Queue<OnlineChatRoomMessage> g_ocr_msg_queue;
 
 static inline const size_t MAX_BUF_LEN = 1024;
-
 
 EventHandle::EventHandle(int _fd) : m_fd(_fd)
 {
