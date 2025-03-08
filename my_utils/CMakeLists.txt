@@ -5,6 +5,15 @@ project(my_utils VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
+if(WARNINGS_AS_ERRORS)
+    if(MSVC)
+        add_compile_options(/WX)
+    else()
+        add_compile_options(-Werror)
+    endif()
+endif()
+
 add_library(${PROJECT_NAME} STATIC
             src/filesystem.cpp
             src/uuid.cpp

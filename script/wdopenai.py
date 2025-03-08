@@ -6,7 +6,7 @@ import os
 import openai
 from enum import Enum, unique
 import sys
-from PyQt6 import QtWidgets,QtCore
+from PySide6 import QtWidgets,QtCore
 from concurrent.futures import ThreadPoolExecutor
 
 # 设置环境变量，确保请求可以通过代理连接到 OpenAI API

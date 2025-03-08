@@ -40,7 +40,7 @@ def filter_data(url, address_count):
     try:
         parsed_url_components = url.split('//')
         sublevel_split = parsed_url_components[1].split('/', 1)
-        data = re.search('\w+\.(com|cn|net|tw|la|io|org|cc|info|cm|us|tv|club|co|in|me|art|vip|xyz|top|gov|ac|edu)',
+        data = re.search(r'\w+\.(com|cn|net|tw|la|io|org|cc|info|cm|us|tv|club|co|in|me|art|vip|xyz|top|gov|ac|edu)',
                          sublevel_split[0])
         if data:
             return data.group()
@@ -165,7 +165,7 @@ def main(path):
 
     del new_data_2["ok"]
 
-    barGraph(new_data)
+    #barGraph(new_data)
 
     cursor.close()
     conn.close()
