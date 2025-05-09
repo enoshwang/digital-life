@@ -76,4 +76,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     // Material Design 3组件
     implementation(libs.androidx.material3)
+
+    // 日志
+    implementation(libs.timber)
 }
