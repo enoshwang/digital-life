@@ -82,6 +82,9 @@ dependencies {
 
     // 日志
     implementation(libs.timber)
+
+    // mmkv
+    implementation(libs.mmkv)
 }
 
 

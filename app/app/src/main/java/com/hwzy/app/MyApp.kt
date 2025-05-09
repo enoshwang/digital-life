@@ -4,8 +4,10 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.hwzy.app.utils.SentryTree
+import com.tencent.mmkv.MMKV
 import io.sentry.android.core.SentryAndroid
 import timber.log.Timber
+
 
 // 全局上下文容器: 早于第一个 Activity 初始化（在应用进程创建时启动），晚于最后一个 Activity 销毁
 // 1. 获取全局上下文（getApplicationContext()）
@@ -28,6 +30,10 @@ class MyApp: Application() {
         }
 
         Timber.d("onCreate")
+
+        // 初始化 MMKV
+        val rootDir = MMKV.initialize(this)
+        Timber.d("mmkv root: $rootDir")
 
         // 监听应用中所有 Activity 的生命周期事件
         // 统计应用前后台状态（如 Activity 启动 / 停止计数）。
