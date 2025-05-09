@@ -2,7 +2,6 @@ package com.hwzy.app
 
 import android.app.Application
 import com.hwzy.app.utils.SentryTree
-import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import timber.log.Timber
 

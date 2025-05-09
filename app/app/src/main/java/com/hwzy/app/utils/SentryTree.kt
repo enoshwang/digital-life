@@ -24,8 +24,5 @@ class SentryTree : Timber.Tree() {
                 if (tag != null) event.setTag("timber_tag", tag)
             }
         }
-        // 处理普通日志
-        else {
-        }
     }
 }
