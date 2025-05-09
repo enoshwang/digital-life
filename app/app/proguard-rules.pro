@@ -19,3 +19,17 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# 保留 Android 组件
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+
+# 保留序列化相关类
+-keep class * implements java.io.Serializable { *; }
+
+# 保留注解
+-keepattributes *Annotation*
+
+# 保留第三方库（示例：Retrofit）
+-keep class retrofit2.** { *; }
+-keepattributes Signature

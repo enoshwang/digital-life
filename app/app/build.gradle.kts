@@ -1,26 +1,40 @@
 plugins {
+    // Android 应用插件：用于构建 Android 应用
     alias(libs.plugins.android.application)
+    // Kotlin Android 插件：支持 Kotlin 语言
     alias(libs.plugins.kotlin.android)
+    // Kotlin Compose 插件：支持 Jetpack Compose UI 框架
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
+    // 项目命名空间
     namespace = "com.hwzy.app"
+    // 编译SDK版本
     compileSdk = 35
 
     defaultConfig {
+        // 应用ID
         applicationId = "com.hwzy.app"
+        // 最低支持SDK版本
         minSdk = 33
+        // 目标SDK版本
         targetSdk = 35
+        // 版本号
         versionCode = 1
+        // 版本名称
         versionName = "1.0"
 
+        // 测试运行器
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 是否启用代码混淆
+            isMinifyEnabled = true
+            // 是否启用资源压缩
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -28,32 +42,38 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Java源版本
+        sourceCompatibility = JavaVersion.VERSION_17
+        // Java目标版本
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        // Kotlin JVM目标版本
+        jvmTarget = "17"
     }
     buildFeatures {
+        // 启用 Compose 功能
         compose = true
     }
 }
 
 dependencies {
 
+    // 核心库
+    // AndroidX 核心 Kotlin 扩展
     implementation(libs.androidx.core.ktx)
+    // Lifecycle库
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // Compose相关
+    // Activity 与 Compose集成
     implementation(libs.androidx.activity.compose)
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
+    // Compose UI基础库
     implementation(libs.androidx.ui)
+    // Compose图形库
     implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
+    // Material Design 3组件
     implementation(libs.androidx.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
