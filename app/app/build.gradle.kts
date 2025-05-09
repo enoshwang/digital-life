@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Kotlin Compose 插件：支持 Jetpack Compose UI 框架
     alias(libs.plugins.kotlin.compose)
+
+    id("io.sentry.android.gradle") version "5.5.0"
 }
 
 android {
@@ -54,6 +56,7 @@ android {
     buildFeatures {
         // 启用 Compose 功能
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,4 +82,14 @@ dependencies {
 
     // 日志
     implementation(libs.timber)
+}
+
+
+sentry {
+    org.set("hwzy")
+    projectName.set("android")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
 }

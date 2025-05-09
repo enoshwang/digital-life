@@ -11,10 +11,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.hwzy.app.ui.theme.AppTheme
+import timber.log.Timber
 
+//  Activity 是用户界面的入口; Application 是后台运行的全局类，由系统隐式管理。
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        Timber.d("onCreate")
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             AppTheme {
