@@ -79,6 +79,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     // Material Design 3组件
     implementation(libs.androidx.material3)
+    // navigation-compose
+    implementation(libs.androidx.navigation.compose)
 
     // 日志
     implementation(libs.timber)
