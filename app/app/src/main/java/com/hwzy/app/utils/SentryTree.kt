@@ -21,8 +21,18 @@ class SentryTree : Timber.Tree() {
         if (t != null) {
             Sentry.captureException(t) { event ->
                 event.level = sentryLevel
+                if (tag != null) event.setTag("TAG", tag)
+            }
+        } else {
+            Sentry.captureMessage(message) { event ->
+                event.level = sentryLevel
                 if (tag != null) event.setTag("timber_tag", tag)
             }
         }
+    }
+
+    override fun isLoggable(tag: String?, priority: Int): Boolean {
+        // 只处理 WARN 及以上级别的日志（Release 环境）
+        return priority >= Log.WARN
     }
 }
