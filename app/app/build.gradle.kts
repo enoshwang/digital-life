@@ -87,6 +87,11 @@ dependencies {
 
     // mmkv
     implementation(libs.mmkv)
+
+    // coil-compose
+    implementation(libs.coil.compose)
+    // foundation
+    implementation(libs.androidx.foundation)
 }
 
 
