@@ -1,5 +1,7 @@
 package com.hwzy.app.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,10 +44,10 @@ fun AppNavigation() {
                         onClick = {
                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                                    saveState = false
                                 }
                                 launchSingleTop = true
-                                restoreState = true
+                                restoreState = false
                             }
                         }
                     )
@@ -58,7 +60,21 @@ fun AppNavigation() {
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) {
+            composable(
+                route = Screen.Home.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                }
+            ) {
                 HomeScreen(
                     onNavigateToDetail = { id ->
                         navController.navigate(Screen.HomeDetail.createRoute(id))
@@ -66,7 +82,21 @@ fun AppNavigation() {
                 )
             }
             
-            composable(Screen.Discover.route) {
+            composable(
+                route = Screen.Discover.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                }
+            ) {
                 DiscoverScreen(
                     onNavigateToDetail = { id ->
                         navController.navigate(Screen.DiscoverDetail.createRoute(id))
@@ -74,7 +104,21 @@ fun AppNavigation() {
                 )
             }
             
-            composable(Screen.Profile.route) {
+            composable(
+                route = Screen.Profile.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(200)  // 缩短动画时间
+                    )
+                }
+            ) {
                 ProfileScreen(
                     onNavigateToDetail = { id ->
                         navController.navigate(Screen.ProfileDetail.createRoute(id))
