@@ -1,5 +1,6 @@
 package com.hwzy.app.screens.discover
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.hwzy.app.components.AppTopBar
 import com.hwzy.app.navigation.Screen
 
@@ -31,7 +33,14 @@ fun DiscoverScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            Text("发现")
+            Text(
+                text = "测试页面",
+                modifier = Modifier
+                    .padding(16.dp)
+                    .clickable {
+                        onNavigateToDetail("test")
+                    }
+            )
         }
     }
 }

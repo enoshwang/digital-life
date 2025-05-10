@@ -22,8 +22,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.hwzy.app.screens.discover.DiscoverScreen
+import com.hwzy.app.screens.discover.TestScreen
 import com.hwzy.app.screens.home.HomeScreen
 import com.hwzy.app.screens.profile.ProfileScreen
+import com.hwzy.app.screens.profile.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +142,19 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getString("id")
-                // TODO: 实现详情页面
+                when (id) {
+                    "test" -> TestScreen(
+                        onNavigateToDetail = { route ->
+                            navController.navigate(route)
+                        },
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                    else -> {
+                        // 其他发现页面的子页面
+                    }
+                }
             }
             
             composable(
@@ -148,7 +162,19 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getString("id")
-                // TODO: 实现详情页面
+                when (id) {
+                    "settings" -> SettingsScreen(
+                        onNavigateToDetail = { route ->
+                            navController.navigate(route)
+                        },
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                    else -> {
+                        // 其他个人页面的子页面
+                    }
+                }
             }
         }
     }
