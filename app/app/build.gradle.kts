@@ -81,6 +81,8 @@ dependencies {
     implementation(libs.androidx.material3)
     // navigation-compose
     implementation(libs.androidx.navigation.compose)
+    // Compose Material Design extended icons. This module contains all Material icons. It is a very large dependency and should not be included directly.
+    implementation(libs.androidx.material.icons.extended)
 
     // 日志
     implementation(libs.timber)
