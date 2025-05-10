@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">hwzy</string>
-    <string name="home">home</string>
-    <string name="discover">discover</string>
-    <string name="profile">profile</string>
+    <string name="app_name">Digital Life</string>
+    <string name="home">Home</string>
+    <string name="discover">Discover</string>
+    <string name="profile">Profile</string>
 </resources>
