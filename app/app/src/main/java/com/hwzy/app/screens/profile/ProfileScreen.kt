@@ -37,9 +37,6 @@ fun ProfileScreen(
                 text = "设置",
                 modifier = Modifier
                     .padding(16.dp)
-                    .clickable {
-                        onNavigateToDetail("settings")
-                    }
             )
         }
     }
