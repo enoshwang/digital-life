@@ -24,10 +24,10 @@ fun HomeScreen(
     )
 ) {
     // 使用 remember 保存状态（在配置更改时会重置）
-    var rememberCounter by remember { mutableStateOf(0) }
+    var rememberCounter by remember { mutableIntStateOf(0) }
     
     // 使用 rememberSaveable 保存状态（在配置更改时会保持）
-    var rememberSaveableCounter by rememberSaveable { mutableStateOf(0) }
+    var rememberSaveableCounter by rememberSaveable { mutableIntStateOf(0) }
     
     // 使用 ViewModel 保存状态（在配置更改时会保持，在进程被杀死时会重置）
     val viewModelCounter by viewModel.counter.collectAsState()

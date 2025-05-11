@@ -12,4 +12,4 @@ class HomeViewModel : ViewModel() {
     fun incrementCounter() {
         _counter.value += 1
     }
-} 
+}
