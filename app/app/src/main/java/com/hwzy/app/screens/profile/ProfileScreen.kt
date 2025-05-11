@@ -18,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hwzy.app.components.ProfileTopBar
@@ -28,7 +29,9 @@ import timber.log.Timber
 @Composable
 fun ProfileScreen(
     onNavigateToDetail: (String) -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(
+        viewModelStoreOwner = LocalContext.current as androidx.lifecycle.ViewModelStoreOwner
+    )
 ) {
     // 使用 ViewModel 保存状态
     val viewModelCounter by viewModel.counter.collectAsState()
@@ -86,7 +89,7 @@ fun ProfileScreen(
                         Text("增加")
                     }
                     Text(
-                        text = "在配置更改时会保持，进程被杀死时会重置",
+                        text = "使用共享的 ViewModel，状态会在屏幕间保持",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
