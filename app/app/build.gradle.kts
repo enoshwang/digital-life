@@ -94,6 +94,9 @@ dependencies {
     implementation(libs.coil.compose)
     // foundation
     implementation(libs.androidx.foundation)
+
+    // HTTP client
+    implementation(libs.retrofit)
 }
 
 
