@@ -1,9 +1,10 @@
-package com.hwzy.app.screens.discover
+package com.hwzy.app.ui.screens.profile
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,14 +22,14 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TestScreen(
+fun SettingsScreen(
     onNavigateToDetail: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("测试页面") },
+                title = { Text("设置") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -54,12 +55,23 @@ fun TestScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            items(20) { index ->
+            items(settingsItems) { item ->
                 Text(
-                    text = "测试项目 ${index + 1}",
+                    text = item,
                     modifier = Modifier.padding(16.dp)
                 )
             }
         }
     }
 }
+
+private val settingsItems = listOf(
+    "账号与安全",
+    "隐私设置",
+    "通知设置",
+    "通用设置",
+    "关于我们",
+    "帮助与反馈",
+    "清除缓存",
+    "检查更新"
+)

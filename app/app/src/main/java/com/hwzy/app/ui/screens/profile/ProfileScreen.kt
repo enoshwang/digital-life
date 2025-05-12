@@ -1,4 +1,4 @@
-package com.hwzy.app.screens.profile
+package com.hwzy.app.ui.screens.profile
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,9 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hwzy.app.components.ProfileTopBar
-import com.hwzy.app.screens.home.HomeViewModel
+import com.hwzy.app.ui.screens.home.HomeViewModel
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +31,7 @@ import timber.log.Timber
 fun ProfileScreen(
     onNavigateToDetail: (String) -> Unit,
     viewModel: HomeViewModel = viewModel(
-        viewModelStoreOwner = LocalContext.current as androidx.lifecycle.ViewModelStoreOwner
+        viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
     )
 ) {
     // 使用 ViewModel 保存状态

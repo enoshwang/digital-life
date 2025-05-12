@@ -1,4 +1,4 @@
-package com.hwzy.app.screens.home
+package com.hwzy.app.ui.screens.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hwzy.app.components.AppTopBar
 import com.hwzy.app.navigation.Screen
@@ -20,7 +21,7 @@ import timber.log.Timber
 fun HomeScreen(
     onNavigateToDetail: (String) -> Unit,
     viewModel: HomeViewModel = viewModel(
-        viewModelStoreOwner = LocalContext.current as androidx.lifecycle.ViewModelStoreOwner
+        viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
     )
 ) {
     // 使用 remember 保存状态（在配置更改时会重置）

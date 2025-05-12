@@ -1,4 +1,4 @@
-package com.hwzy.app.screens.discover
+package com.hwzy.app.ui.screens.discover
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

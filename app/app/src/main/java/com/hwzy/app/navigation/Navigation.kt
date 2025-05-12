@@ -21,11 +21,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.hwzy.app.screens.discover.DiscoverScreen
-import com.hwzy.app.screens.discover.TestScreen
-import com.hwzy.app.screens.home.HomeScreen
-import com.hwzy.app.screens.profile.ProfileScreen
-import com.hwzy.app.screens.profile.SettingsScreen
+import com.hwzy.app.ui.screens.discover.DiscoverScreen
+import com.hwzy.app.ui.screens.discover.TestScreen
+import com.hwzy.app.ui.screens.home.HomeScreen
+import com.hwzy.app.ui.screens.profile.ProfileScreen
+import com.hwzy.app.ui.screens.profile.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

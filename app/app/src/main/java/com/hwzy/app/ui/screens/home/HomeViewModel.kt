@@ -1,4 +1,4 @@
-package com.hwzy.app.screens.home
+package com.hwzy.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
