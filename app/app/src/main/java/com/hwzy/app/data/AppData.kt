@@ -3,13 +3,7 @@ package com.hwzy.app.data
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.NoteAlt
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -57,19 +51,12 @@ object AppData {
     private val discoverItems = listOf(
         // 生活服务类
         DiscoverItem("test", "测试", Icons.Filled.WbSunny, "生活服务", tags = listOf("测试", "生活")),
-        DiscoverItem("weather", "天气", Icons.Filled.WbSunny, "生活服务", tags = listOf("天气", "生活", "温度", "预报")),
-        DiscoverItem("calendar", "日历", Icons.Filled.CalendarMonth, "生活服务", tags = listOf("日历", "日期", "日程")),
-        DiscoverItem("notes", "备忘录", Icons.Filled.NoteAlt, "生活服务", tags = listOf("备忘录", "笔记", "记录")),
         
         // 娱乐类
         DiscoverItem("music", "音乐", Icons.Filled.MusicNote, "娱乐", tags = listOf("音乐", "歌曲", "播放器")),
-        DiscoverItem("video", "视频", Icons.Filled.VideoLibrary, "娱乐", tags = listOf("视频", "电影", "电视剧")),
-        DiscoverItem("games", "游戏", Icons.Filled.SportsEsports, "娱乐", tags = listOf("游戏", "娱乐")),
         
         // 工具类
-        DiscoverItem("calculator", "计算器", Icons.Filled.Calculate, "工具", tags = listOf("计算器", "计算", "数学")),
-        DiscoverItem("translate", "翻译", Icons.Filled.Translate, "工具", tags = listOf("翻译", "语言", "词典")),
-        DiscoverItem("qrcode", "二维码", Icons.Filled.QrCode, "工具", tags = listOf("二维码", "扫码", "条形码"))
+        DiscoverItem("calculator", "计算器", Icons.Filled.Calculate, "工具", tags = listOf("计算器", "计算", "数学"))
     )
 
     // 示例文章
