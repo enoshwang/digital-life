@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TestScreen(
-    onNavigateToDetail: (String) -> Unit,
+    @Suppress("unused") onNavigateToDetail: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     Scaffold(

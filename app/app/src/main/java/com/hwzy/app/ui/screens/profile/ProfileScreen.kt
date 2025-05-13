@@ -1,12 +1,8 @@
 package com.hwzy.app.ui.screens.profile
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -16,14 +12,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.hwzy.app.components.ProfileTopBar
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateToDetail: (String) -> Unit
+    @Suppress("unused") onNavigateToDetail: (String) -> Unit
 ) {
 
     // 使用 LaunchedEffect 来跟踪屏幕的重新组合
@@ -54,20 +49,10 @@ fun ProfileScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            // ViewModel 计数器
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "test",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
+            Text(
+                text = "test",
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }
