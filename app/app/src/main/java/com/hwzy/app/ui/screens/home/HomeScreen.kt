@@ -30,7 +30,7 @@ import timber.log.Timber
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToDetail: (String) -> Unit
+    @Suppress("unused") onNavigateToDetail: (String) -> Unit
 ) {
     // 当前选中的标签
     var selectedTab by remember { mutableStateOf<TopTabItem>(TopTabItem.HuiWen) }
