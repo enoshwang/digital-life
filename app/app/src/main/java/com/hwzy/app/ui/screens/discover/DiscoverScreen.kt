@@ -11,16 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.NoteAlt
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,48 +23,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.hwzy.app.components.AppTopBar
+import com.hwzy.app.data.AppData
+import com.hwzy.app.data.DiscoverItem
 import com.hwzy.app.navigation.Screen
-
-data class DiscoverItem(
-    val title: String,
-    val icon: ImageVector,
-    val route: String,
-    val category: String
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiscoverScreen(
     onNavigateToDetail: (String) -> Unit
 ) {
-    val discoverItems = listOf(
-        // 生活服务类
-        DiscoverItem("测试", Icons.Filled.WbSunny, "test", "生活服务"),
-        DiscoverItem("天气", Icons.Filled.WbSunny, "weather", "生活服务"),
-        DiscoverItem("日历", Icons.Filled.CalendarMonth, "calendar", "生活服务"),
-        DiscoverItem("备忘录", Icons.Filled.NoteAlt, "notes", "生活服务"),
-        
-        // 娱乐类
-        DiscoverItem("音乐", Icons.Filled.MusicNote, "music", "娱乐"),
-        DiscoverItem("视频", Icons.Filled.VideoLibrary, "video", "娱乐"),
-        DiscoverItem("游戏", Icons.Filled.SportsEsports, "games", "娱乐"),
-        
-        // 工具类
-        DiscoverItem("计算器", Icons.Filled.Calculate, "calculator", "工具"),
-        DiscoverItem("翻译", Icons.Filled.Translate, "translate", "工具"),
-        DiscoverItem("二维码", Icons.Filled.QrCode, "qrcode", "工具")
-    )
-
-    val groupedItems = discoverItems.groupBy { it.category }
+    val groupedItems = AppData.discoverItemsList.groupBy { it.category }
 
     Scaffold(
         topBar = {
             AppTopBar(
                 currentRoute = Screen.Discover.route,
-                onSearchClick = { /* TODO: 实现搜索功能 */ }
+                onSearchClick = { onNavigateToDetail("search") }
             )
         }
     ) { paddingValues ->
@@ -89,7 +56,7 @@ fun DiscoverScreen(
                 items(items) { item ->
                     DiscoverItemCard(
                         item = item,
-                        onItemClick = { onNavigateToDetail(item.route) }
+                        onItemClick = { onNavigateToDetail(item.id) }
                     )
                 }
             }

@@ -26,6 +26,7 @@ import com.hwzy.app.ui.screens.discover.TestScreen
 import com.hwzy.app.ui.screens.home.HomeScreen
 import com.hwzy.app.ui.screens.profile.ProfileScreen
 import com.hwzy.app.ui.screens.profile.SettingsScreen
+import com.hwzy.app.ui.screens.search.SearchScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,7 +135,11 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getString("id")
-                // TODO: 实现详情页面
+                when (id) {
+                    else -> {
+                        null
+                    }
+                }
             }
             
             composable(
@@ -143,6 +148,14 @@ fun AppNavigation() {
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getString("id")
                 when (id) {
+                    "search" -> SearchScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onItemClick = { itemClickRoute ->
+                            navController.navigate(itemClickRoute)
+                        }
+                    )
                     "test" -> TestScreen(
                         onNavigateToDetail = { route ->
                             navController.navigate(route)

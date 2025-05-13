@@ -27,8 +27,7 @@ import com.hwzy.app.navigation.Screen
 fun AppTopBar(
     currentRoute: String,
     onSearchClick: () -> Unit = {},
-    showSearchIcon: Boolean = true,
-    showUserInfo: Boolean = false
+    showSearchIcon: Boolean = true
 ) {
     Surface(
         modifier = Modifier
