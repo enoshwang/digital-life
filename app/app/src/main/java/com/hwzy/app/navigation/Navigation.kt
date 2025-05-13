@@ -152,8 +152,14 @@ fun AppNavigation() {
                         onNavigateBack = {
                             navController.popBackStack()
                         },
-                        onItemClick = { itemClickRoute ->
-                            navController.navigate(itemClickRoute)
+                        onItemClick = { itemId ->
+                            when (itemId) {
+                                "test" -> {
+                                    val route = Screen.DiscoverDetail.createRoute(itemId)
+                                    navController.navigate(route)
+                                }
+                                else -> navController.navigate(Screen.DiscoverDetail.route + "?id=$itemId")
+                            }
                         }
                     )
                     "test" -> TestScreen(

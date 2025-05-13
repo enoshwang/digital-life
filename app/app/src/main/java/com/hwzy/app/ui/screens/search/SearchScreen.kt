@@ -111,7 +111,7 @@ private fun SearchSuggestions(
     modifier: Modifier = Modifier,
     onItemClick: (String) -> Unit
 ) {
-    val suggestions = listOf("天气", "日历", "备忘录")
+    val suggestions = listOf("测试")
     
     LazyColumn(modifier = modifier) {
         item {
