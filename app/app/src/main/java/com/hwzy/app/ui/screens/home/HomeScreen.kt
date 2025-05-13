@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +33,7 @@ fun HomeScreen(
     @Suppress("unused") onNavigateToDetail: (String) -> Unit
 ) {
     // 当前选中的标签
-    var selectedTab by remember { mutableStateOf<TopTabItem>(TopTabItem.HuiWen) }
+    var selectedTab by rememberSaveable { mutableStateOf<TopTabItem>(TopTabItem.HuiWen) }
 
     // 添加调试日志
     LaunchedEffect(Unit) {

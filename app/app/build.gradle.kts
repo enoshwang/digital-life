@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Kotlin Compose 插件：支持 Jetpack Compose UI 框架
     alias(libs.plugins.kotlin.compose)
+    // Kotlin Parcelize 插件：支持 Parcelable 序列化
+    id("kotlin-parcelize")
 
     id("io.sentry.android.gradle") version "5.5.0"
 }

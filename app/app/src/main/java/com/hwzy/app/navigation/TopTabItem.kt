@@ -1,11 +1,13 @@
 package com.hwzy.app.navigation
 
-import timber.log.Timber
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 sealed class TopTabItem(
     val route: String,
     val title: String
-) {
+) : Parcelable {
     object News : TopTabItem(
         route = "news",
         title = "资讯"
@@ -22,7 +24,7 @@ sealed class TopTabItem(
     )
     
     companion object {
-        val items:  List<TopTabItem> by lazy {
+        val items: List<TopTabItem> by lazy {
             listOf(News, HuiWen, AI)
         }
     }
