@@ -96,6 +96,8 @@ dependencies {
     implementation(libs.coil.compose)
     // foundation
     implementation(libs.androidx.foundation)
+    // Pager
+    implementation(libs.androidx.foundation.layout)
 
     // HTTP client
     implementation(libs.retrofit)
