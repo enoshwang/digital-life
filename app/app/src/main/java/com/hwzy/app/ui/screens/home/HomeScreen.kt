@@ -1,56 +1,51 @@
 package com.hwzy.app.ui.screens.home
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hwzy.app.components.AppTopBar
 import com.hwzy.app.navigation.Screen
+import com.hwzy.app.navigation.TopTabItem
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToDetail: (String) -> Unit,
-    viewModel: HomeViewModel = viewModel(
-        viewModelStoreOwner = LocalContext.current as ViewModelStoreOwner
-    )
+    onNavigateToDetail: (String) -> Unit
 ) {
-    // 使用 remember 保存状态（在配置更改时会重置）
-    var rememberCounter by remember { mutableIntStateOf(0) }
-    
-    // 使用 rememberSaveable 保存状态（在配置更改时会保持）
-    var rememberSaveableCounter by rememberSaveable { mutableIntStateOf(0) }
-    
-    // 使用 ViewModel 保存状态（在配置更改时会保持，在进程被杀死时会重置）
-    val viewModelCounter by viewModel.counter.collectAsState()
+    // 当前选中的标签
+    var selectedTab by remember { mutableStateOf<TopTabItem>(TopTabItem.HuiWen) }
 
-    // 使用 LaunchedEffect 来跟踪屏幕的重新组合
+    // 添加调试日志
     LaunchedEffect(Unit) {
-        Timber.d("HomeScreen 被重新组合，当前计数器值: $viewModelCounter")
-    }
-
-    // 使用 DisposableEffect 来跟踪屏幕的创建和销毁
-    DisposableEffect(Unit) {
-        Timber.d("HomeScreen 被创建，ViewModel 实例: $viewModel")
-        onDispose {
-            Timber.d("HomeScreen 被销毁")
-        }
+        Timber.d("HomeScreen 被创建")
+        Timber.d("Selected Index: ${TopTabItem.items.indexOf(selectedTab)}")
     }
 
     Scaffold(
         topBar = {
             AppTopBar(
                 currentRoute = Screen.Home.route,
-                onSearchClick = { /* TODO: 实现搜索功能 */ }
+                onSearchClick = { Timber.d("搜索按钮被点击") }
             )
         }
     ) { paddingValues ->
@@ -58,108 +53,81 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "状态保存测试",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            
-            // Remember 计数器
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            // 顶部标签栏
+            TabRow(
+                selectedTabIndex =  TopTabItem.items.indexOf(selectedTab),
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Remember 计数器",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "值: $rememberCounter",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Button(
-                        onClick = { 
-                            rememberCounter++
-                            Timber.d("HomeScreen Remember 计数器增加，当前值: $rememberCounter")
+                TopTabItem.items.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = {
+                            selectedTab = tab
+                            Timber.d("选中标签: ${tab.title}")
+                        },
+                        text = {
+                            Text(
+                                text = tab.title,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
-                    ) {
-                        Text("增加")
-                    }
-                    Text(
-                        text = "在配置更改时会重置",
-                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            // RememberSaveable 计数器
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            // 内容区域
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "RememberSaveable 计数器",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "值: $rememberSaveableCounter",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Button(
-                        onClick = { 
-                            rememberSaveableCounter++
-                            Timber.d("HomeScreen RememberSaveable 计数器增加，当前值: $rememberSaveableCounter")
-                        }
-                    ) {
-                        Text("增加")
-                    }
-                    Text(
-                        text = "在配置更改时会保持",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            // ViewModel 计数器
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "ViewModel 计数器 (共享)",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "值: $viewModelCounter",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Button(
-                        onClick = { 
-                            viewModel.incrementCounter()
-                            Timber.d("HomeScreen ViewModel 计数器增加，当前值: $viewModelCounter")
-                        }
-                    ) {
-                        Text("增加")
-                    }
-                    Text(
-                        text = "使用共享的 ViewModel，状态会在屏幕间保持",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                when (selectedTab) {
+                    TopTabItem.News -> NewsContent()
+                    TopTabItem.HuiWen -> HomeContent()
+                    TopTabItem.AI -> AIContent()
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NewsContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("资讯内容")
+    }
+}
+
+@Composable
+private fun HomeContent() {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "主页内容",
+            style = MaterialTheme.typography.headlineMedium ,
+            color = Color.Black
+        )
+    }
+}
+
+@Composable
+private fun AIContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("AI 内容")
     }
 }
