@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -23,8 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.hwzy.app.components.AppTopBar
-import com.hwzy.app.navigation.Screen
 import com.hwzy.app.navigation.TopTabItem
 import timber.log.Timber
 
@@ -42,67 +39,46 @@ fun HomeScreen(
         Timber.d("Selected Index: ${TopTabItem.items.indexOf(selectedTab)}")
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                currentRoute = Screen.Home.route,
-                onSearchClick = { Timber.d("搜索按钮被点击") }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // 顶部标签栏
-            TabRow(
-                selectedTabIndex =  TopTabItem.items.indexOf(selectedTab),
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary
-            ) {
-                TopTabItem.items.forEach { tab ->
-                    Tab(
-                        selected = selectedTab == tab,
-                        onClick = {
-                            selectedTab = tab
-                            Timber.d("选中标签: ${tab.title}")
-                        },
-                        text = {
-                            Text(
-                                text = stringResource(id = tab.title),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    )
-                }
-            }
-
-            // 内容区域
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                when (selectedTab) {
-                    TopTabItem.News -> NewsContent()
-                    TopTabItem.HuiWen -> HomeContent()
-                    TopTabItem.AI -> AIContent()
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NewsContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text("资讯内容")
+        // 顶部标签栏
+        TabRow(
+            selectedTabIndex =  TopTabItem.items.indexOf(selectedTab),
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
+            TopTabItem.items.forEach { tab ->
+                Tab(
+                    selected = selectedTab == tab,
+                    onClick = {
+                        selectedTab = tab
+                        Timber.d("选中标签: ${tab.title}")
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(id = tab.title),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                )
+            }
+        }
+
+        // 内容区域
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            when (selectedTab) {
+                TopTabItem.News -> NewsContent()
+                TopTabItem.HuiWen -> HomeContent()
+                TopTabItem.AI -> AIContent()
+            }
+        }
     }
 }
 
@@ -120,15 +96,5 @@ private fun HomeContent() {
             style = MaterialTheme.typography.headlineMedium ,
             color = Color.Black
         )
-    }
-}
-
-@Composable
-private fun AIContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("AI 内容")
     }
 }
