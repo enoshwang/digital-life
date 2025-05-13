@@ -4,4 +4,7 @@
     <string name="home">主页</string>
     <string name="discover">发现</string>
     <string name="profile">我的</string>
+    <string name="news">资讯</string>
+    <string name="ai">人工智能</string>
+    <string name="huiwen">慧文</string>
 </resources>

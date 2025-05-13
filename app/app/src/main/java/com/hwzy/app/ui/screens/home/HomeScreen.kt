@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.hwzy.app.components.AppTopBar
 import com.hwzy.app.navigation.Screen
@@ -70,7 +71,7 @@ fun HomeScreen(
                         },
                         text = {
                             Text(
-                                text = tab.title,
+                                text = stringResource(id = tab.title),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }

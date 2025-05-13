@@ -4,4 +4,7 @@
     <string name="home">Home</string>
     <string name="discover">Discover</string>
     <string name="profile">Profile</string>
+    <string name="news">news</string>
+    <string name="ai">AI</string>
+    <string name="huiwen">huiwen</string>
 </resources>
