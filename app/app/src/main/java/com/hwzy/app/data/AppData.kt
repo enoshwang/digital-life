@@ -2,8 +2,6 @@ package com.hwzy.app.data
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -51,12 +49,9 @@ object AppData {
     private val discoverItems = listOf(
         // 生活服务类
         DiscoverItem("test", "测试", Icons.Filled.WbSunny, "生活服务", tags = listOf("测试", "生活")),
-        
-        // 娱乐类
-        DiscoverItem("music", "音乐", Icons.Filled.MusicNote, "娱乐", tags = listOf("音乐", "歌曲", "播放器")),
-        
+
         // 工具类
-        DiscoverItem("calculator", "计算器", Icons.Filled.Calculate, "工具", tags = listOf("计算器", "计算", "数学"))
+        DiscoverItem("sensor", "传感器", Icons.Filled.WbSunny, "工具箱", tags = listOf("传感器", "设备信息"))
     )
 
     // 示例文章

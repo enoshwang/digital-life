@@ -27,7 +27,7 @@ android {
         // 版本号
         versionCode = 1
         // 版本名称
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         // 测试运行器
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
