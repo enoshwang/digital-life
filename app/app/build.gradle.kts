@@ -86,6 +86,9 @@ dependencies {
     // Compose Material Design extended icons. This module contains all Material icons. It is a very large dependency and should not be included directly.
     implementation(libs.androidx.material.icons.extended)
 
+    // fragment-ktx
+    implementation(libs.androidx.fragment.ktx)
+
     // 日志
     implementation(libs.timber)
 
