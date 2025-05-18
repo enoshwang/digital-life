@@ -125,11 +125,48 @@ fun CameraScreen(
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var cameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
     var showCameraSelector by remember { mutableStateOf(false) }
+    
+    // 获取所有可用的相机镜头
     val availableCameraSelectors = remember {
-        listOf(
-            CameraSelector.DEFAULT_BACK_CAMERA to "后置相机",
-            CameraSelector.DEFAULT_FRONT_CAMERA to "前置相机"
-        )
+        val selectors = mutableListOf<Pair<CameraSelector, String>>()
+        
+        // 添加前置相机
+        selectors.add(CameraSelector.DEFAULT_FRONT_CAMERA to "前置相机")
+        
+        // 添加后置相机
+        selectors.add(CameraSelector.DEFAULT_BACK_CAMERA to "主摄")
+        
+        // 添加超广角相机
+        try {
+            val ultraWideCamera = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .addCameraFilter { cameras ->
+                    cameras.filter { camera ->
+                        camera.lensFacing == CameraSelector.LENS_FACING_BACK
+                    }
+                }
+                .build()
+            selectors.add(ultraWideCamera to "超广角")
+        } catch (e: Exception) {
+            Timber.tag(TAG).d("设备不支持超广角相机：${e.message}")
+        }
+        
+        // 添加长焦相机
+        try {
+            val telephotoCamera = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .addCameraFilter { cameras ->
+                    cameras.filter { camera ->
+                        camera.lensFacing == CameraSelector.LENS_FACING_BACK
+                    }
+                }
+                .build()
+            selectors.add(telephotoCamera to "长焦")
+        } catch (e: Exception) {
+            Timber.tag(TAG).d("设备不支持长焦相机：${e.message}")
+        }
+        
+        selectors
     }
 
     // 停止录制
@@ -171,6 +208,13 @@ fun CameraScreen(
                 cameraProvider?.unbindAll()
                 
                 cameraProvider = cameraProviderFuture.get()
+                
+                // 检查相机是否可用
+                if (!cameraProvider?.hasCamera(cameraSelector)!!) {
+                    Timber.tag(TAG).e("相机不可用: $cameraSelector")
+                    return@addListener
+                }
+                
                 val preview = Preview.Builder().build()
                 preview.surfaceProvider = previewView.surfaceProvider
 
