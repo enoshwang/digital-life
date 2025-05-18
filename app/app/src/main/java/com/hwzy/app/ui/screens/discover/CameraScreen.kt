@@ -134,6 +134,18 @@ fun CameraScreen(
 
     // 添加相机预览状态
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+
+    // 停止录制
+    fun stopRecording() {
+        try {
+            recording?.stop()
+            recording = null
+            isRecording = false
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "停止录制时发生错误")
+        }
+    }
 
     // 相机初始化函数
     fun initializeCamera(
@@ -141,53 +153,64 @@ fun CameraScreen(
         lifecycleOwner: androidx.lifecycle.LifecycleOwner,
         previewView: PreviewView
     ) {
+        // 如果正在录制，先停止录制
+        if (isRecording) {
+            stopRecording()
+        }
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build()
-            preview.surfaceProvider = previewView.surfaceProvider
-
-            // 设置图像捕获
-            imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .build()
-
-            // 设置视频录制
-            val recorder = Recorder.Builder()
-                .setQualitySelector(
-                    QualitySelector.from(
-                        Quality.HIGHEST,
-                        FallbackStrategy.higherQualityOrLowerThan(Quality.SD)
-                    )
-                )
-                .build()
-            videoCapture = VideoCapture.withOutput(recorder)
-
-            // 设置图像分析
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(
-                        ContextCompat.getMainExecutor(context),
-                        LuminosityAnalyzer { luma ->
-                            luminosity = luma
-                        }
-                    )
-                }
-
             try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    currentCameraSelector,
-                    preview,
-                    imageCapture,
-                    videoCapture,
-                    imageAnalyzer
-                )
+                // 解绑所有用例
+                cameraProvider?.unbindAll()
+                
+                cameraProvider = cameraProviderFuture.get()
+                val preview = Preview.Builder().build()
+                preview.surfaceProvider = previewView.surfaceProvider
+
+                // 设置图像捕获
+                imageCapture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .build()
+
+                // 设置视频录制
+                val recorder = Recorder.Builder()
+                    .setQualitySelector(
+                        QualitySelector.from(
+                            Quality.HIGHEST,
+                            FallbackStrategy.higherQualityOrLowerThan(Quality.SD)
+                        )
+                    )
+                    .build()
+                videoCapture = VideoCapture.withOutput(recorder)
+
+                // 设置图像分析
+                val imageAnalyzer = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .also {
+                        it.setAnalyzer(
+                            ContextCompat.getMainExecutor(context),
+                            LuminosityAnalyzer { luma ->
+                                luminosity = luma
+                            }
+                        )
+                    }
+
+                try {
+                    cameraProvider?.bindToLifecycle(
+                        lifecycleOwner,
+                        currentCameraSelector,
+                        preview,
+                        imageCapture,
+                        videoCapture,
+                        imageAnalyzer
+                    )
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e, "绑定相机用例时发生错误")
+                }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Timber.tag(TAG).e(e, "初始化相机时发生错误")
             }
         }, ContextCompat.getMainExecutor(context))
     }
@@ -298,9 +321,7 @@ fun CameraScreen(
                         Button(
                             onClick = {
                                 if (isRecording) {
-                                    recording?.stop()
-                                    recording = null
-                                    isRecording = false
+                                    stopRecording()
                                 } else {
                                     videoCapture?.let { capture ->
                                         startRecording(
@@ -353,6 +374,10 @@ fun CameraScreen(
                                 availableCameraSelectors.forEach { (selector, name) ->
                                     TextButton(
                                         onClick = {
+                                            // 如果正在录制，先停止录制
+                                            if (isRecording) {
+                                                stopRecording()
+                                            }
                                             currentCameraSelector = selector
                                             showCameraSelector = false
                                             // 重新初始化相机
