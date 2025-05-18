@@ -1,17 +1,24 @@
 package com.hwzy.app.ui.screens.discover
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
+import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -53,6 +60,7 @@ import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.text.DecimalFormat
 import kotlin.math.abs
+import java.util.Locale
 
 private const val TAG = "SensorScreen"
 private const val SMOOTHING_FACTOR = 0.3f // 平滑因子，值越小越平滑
@@ -119,6 +127,85 @@ fun SensorScreen(
     
     // 设备信息状态
     val deviceInfo = remember { mutableStateOf(DeviceInfo()) }
+    
+    // 位置信息状态
+    var locationInfo by remember { mutableStateOf(LocationInfo()) }
+    
+    // 位置监听器
+    val locationListener = remember {
+        object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                locationInfo = LocationInfo(
+                    latitude = String.format(Locale.getDefault(), "%.6f", location.latitude),
+                    longitude = String.format(Locale.getDefault(), "%.6f", location.longitude),
+                    altitude = String.format(Locale.getDefault(), "%.1f 米", location.altitude),
+                    accuracy = String.format(Locale.getDefault(), "%.1f 米", location.accuracy),
+                    provider = location.provider.toString(),
+                    speed = String.format(Locale.getDefault(), "%.1f 米/秒", location.speed),
+                    bearing = String.format(Locale.getDefault(), "%.1f°", location.bearing),
+                    lastUpdateTime = String.format(Locale.getDefault(), "%tF %tT", location.time, location.time)
+                )
+            }
+            
+            override fun onProviderEnabled(provider: String) {}
+            override fun onProviderDisabled(provider: String) {}
+            override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
+        }
+    }
+    
+    // 请求位置更新
+    LaunchedEffect(Unit) {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val hasLocationPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (hasLocationPermission) {
+            try {
+                // 优先使用GPS定位
+                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        1000L, // 最小时间间隔：1秒
+                        1f,    // 最小距离变化：1米
+                        locationListener,
+                        Looper.getMainLooper()
+                    )
+                }
+                
+                // 如果GPS不可用，使用网络定位
+                if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.NETWORK_PROVIDER,
+                        1000L,
+                        1f,
+                        locationListener,
+                        Looper.getMainLooper()
+                    )
+                }
+                
+                // 获取最后一次已知位置
+                val lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                    ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                
+                lastKnownLocation?.let {
+                    locationInfo = LocationInfo(
+                        latitude = String.format(Locale.getDefault(), "%.6f", it.latitude),
+                        longitude = String.format(Locale.getDefault(), "%.6f", it.longitude),
+                        altitude = String.format(Locale.getDefault(), "%.1f 米", it.altitude),
+                        accuracy = String.format(Locale.getDefault(), "%.1f 米", it.accuracy),
+                        provider = it.provider.toString(),
+                        speed = String.format(Locale.getDefault(), "%.1f 米/秒", it.speed),
+                        bearing = String.format(Locale.getDefault(), "%.1f°", it.bearing),
+                        lastUpdateTime = String.format(Locale.getDefault(), "%tF %tT", it.time, it.time)
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "获取位置信息失败")
+            }
+        }
+    }
     
     // 更新设备信息
     LaunchedEffect(Unit) {
@@ -275,7 +362,38 @@ fun SensorScreen(
                     )
                 )
             }
+
+            // 位置信息
+            item {
+                InfoCard(
+                    title = "位置信息",
+                    items = listOf(
+                        "纬度" to locationInfo.latitude,
+                        "经度" to locationInfo.longitude,
+                        "海拔" to locationInfo.altitude,
+                        "精度" to locationInfo.accuracy,
+                        "位置提供者" to locationInfo.provider,
+                        "速度" to locationInfo.speed,
+                        "方向" to locationInfo.bearing,
+                        "最后更新时间" to locationInfo.lastUpdateTime
+                    )
+                )
+            }
             
+            // 蓝牙信息
+            item {
+                InfoCard(
+                    title = "蓝牙信息",
+                    items = listOf(
+                        "蓝牙状态" to deviceInfo.value.bluetoothInfo.isEnabled,
+                        "设备名称" to deviceInfo.value.bluetoothInfo.name,
+                        "连接状态" to deviceInfo.value.bluetoothInfo.state,
+                        "已配对设备" to deviceInfo.value.bluetoothInfo.connectedDevices,
+                        "支持的配置文件" to deviceInfo.value.bluetoothInfo.supportedProfiles
+                    )
+                )
+            }
+
             // 传感器信息
             item {
                 InfoCard(
@@ -331,7 +449,8 @@ private fun getSensorCategory(type: Int): String {
         Sensor.TYPE_GRAVITY,
         Sensor.TYPE_GYROSCOPE,
         Sensor.TYPE_LINEAR_ACCELERATION,
-        Sensor.TYPE_ROTATION_VECTOR -> "运动传感器"
+        Sensor.TYPE_ROTATION_VECTOR,
+        Sensor.TYPE_GAME_ROTATION_VECTOR -> "运动传感器"
         
         Sensor.TYPE_LIGHT,
         Sensor.TYPE_PROXIMITY,
@@ -340,7 +459,8 @@ private fun getSensorCategory(type: Int): String {
         Sensor.TYPE_RELATIVE_HUMIDITY -> "环境传感器"
         
         Sensor.TYPE_MAGNETIC_FIELD,
-        Sensor.TYPE_ORIENTATION -> "位置传感器"
+        Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED,
+        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> "位置传感器"
         
         Sensor.TYPE_HEART_RATE,
         Sensor.TYPE_HEART_BEAT,
@@ -358,18 +478,20 @@ private fun getSensorTypeName(type: Int): String {
         Sensor.TYPE_GYROSCOPE -> "陀螺仪"
         Sensor.TYPE_LINEAR_ACCELERATION -> "线性加速度计"
         Sensor.TYPE_ROTATION_VECTOR -> "旋转向量"
+        Sensor.TYPE_GAME_ROTATION_VECTOR -> "游戏旋转向量"
         Sensor.TYPE_LIGHT -> "光线传感器"
         Sensor.TYPE_PROXIMITY -> "距离传感器"
         Sensor.TYPE_AMBIENT_TEMPERATURE -> "温度传感器"
         Sensor.TYPE_PRESSURE -> "压力传感器"
         Sensor.TYPE_RELATIVE_HUMIDITY -> "湿度传感器"
         Sensor.TYPE_MAGNETIC_FIELD -> "磁场传感器"
-        Sensor.TYPE_ORIENTATION -> "方向传感器"
+        Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> "未校准磁场传感器"
+        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> "地磁旋转向量"
         Sensor.TYPE_HEART_RATE -> "心率传感器"
         Sensor.TYPE_HEART_BEAT -> "心跳传感器"
         Sensor.TYPE_STEP_COUNTER -> "计步器"
         Sensor.TYPE_STEP_DETECTOR -> "步数检测器"
-        else -> "未知传感器"
+        else -> "其他传感器"
     }
 }
 
@@ -394,13 +516,45 @@ private data class DeviceInfo(
     val batteryStatus: String = "未知",
     val batteryTemperature: String = "未知",
     val batteryVoltage: String = "未知",
-    val sensors: List<Pair<String, String>> = emptyList()
+    val sensors: List<Pair<String, String>> = emptyList(),
+    val locationInfo: LocationInfo = LocationInfo(),
+    val bluetoothInfo: BluetoothInfo = BluetoothInfo()
+)
+
+private data class LocationInfo(
+    val latitude: String = "未知",
+    val longitude: String = "未知",
+    val altitude: String = "未知",
+    val accuracy: String = "未知",
+    val provider: String = "未知",
+    val speed: String = "未知",
+    val bearing: String = "未知",
+    val lastUpdateTime: String = "未知"
+)
+
+private data class BluetoothInfo(
+    val isEnabled: String = "未知",
+    val name: String = "未知",
+    val state: String = "未知",
+    val connectedDevices: String = "未知",
+    val supportedProfiles: String = "未知"
 )
 
 private fun collectDeviceInfo(context: Context): DeviceInfo {
     context.packageManager
-    val decimalFormat = DecimalFormat("#.##")
-    val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+    DecimalFormat("#.##")
+    val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    
+    // 检查权限
+    ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    
+    val hasBluetoothPermission = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.BLUETOOTH_CONNECT
+    ) == PackageManager.PERMISSION_GRANTED
     
     // 基本信息
     val deviceModel = Build.MODEL
@@ -422,7 +576,7 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
     val runtime = Runtime.getRuntime()
     val totalMemory = formatSize(runtime.totalMemory().toDouble())
     val availableMemory = formatSize(runtime.freeMemory().toDouble())
-    val memoryUsage = "${decimalFormat.format((1 - runtime.freeMemory().toDouble() / runtime.totalMemory()) * 100)}%"
+    val memoryUsage = String.format(Locale.getDefault(), "%.2f%%", (1 - runtime.freeMemory().toDouble() / runtime.totalMemory()) * 100)
     
     // 网络信息
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -453,7 +607,7 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
         val batteryStatus = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
         val temperature = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
         "${temperature / 10.0}°C"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         "未知"
     }
     
@@ -462,7 +616,7 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
         val batteryStatus = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
         val voltage = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, 0) ?: 0
         "${voltage / 1000.0}V"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         "未知"
     }
     
@@ -476,12 +630,11 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
                 Sensor.TYPE_PROXIMITY -> "距离传感器"
                 Sensor.TYPE_MAGNETIC_FIELD -> "磁场传感器"
                 Sensor.TYPE_PRESSURE -> "压力传感器"
-                Sensor.TYPE_TEMPERATURE -> "温度传感器"
+                Sensor.TYPE_AMBIENT_TEMPERATURE -> "环境温度传感器"
                 Sensor.TYPE_GRAVITY -> "重力传感器"
                 Sensor.TYPE_LINEAR_ACCELERATION -> "线性加速度计"
                 Sensor.TYPE_ROTATION_VECTOR -> "旋转向量"
                 Sensor.TYPE_RELATIVE_HUMIDITY -> "湿度传感器"
-                Sensor.TYPE_AMBIENT_TEMPERATURE -> "环境温度传感器"
                 Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> "未校准磁场传感器"
                 Sensor.TYPE_GAME_ROTATION_VECTOR -> "游戏旋转向量"
                 Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> "未校准陀螺仪"
@@ -494,6 +647,52 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
             }
         }
     
+    // 蓝牙信息
+    val bluetoothInfo = if (hasBluetoothPermission) {
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+        
+        bluetoothAdapter?.let {
+            val profiles = mutableListOf<String>()
+            if (it.isEnabled) {
+                // 检查基本配置文件
+                if (it.getProfileConnectionState(BluetoothProfile.A2DP) != BluetoothAdapter.STATE_DISCONNECTED) {
+                    profiles.add("A2DP")
+                }
+                if (it.getProfileConnectionState(BluetoothProfile.HEADSET) != BluetoothAdapter.STATE_DISCONNECTED) {
+                    profiles.add("HSP")
+                }
+                if (it.getProfileConnectionState(BluetoothProfile.GATT) != BluetoothAdapter.STATE_DISCONNECTED) {
+                    profiles.add("GATT")
+                }
+                if (it.getProfileConnectionState(BluetoothProfile.GATT_SERVER) != BluetoothAdapter.STATE_DISCONNECTED) {
+                    profiles.add("GATT Server")
+                }
+                
+                // 检查高级配置文件（需要版本检查）
+                if (it.getProfileConnectionState(BluetoothProfile.LE_AUDIO) != BluetoothAdapter.STATE_DISCONNECTED) {
+                    profiles.add("LE Audio")
+                }
+            }
+            
+            BluetoothInfo(
+                isEnabled = if (it.isEnabled) "已启用" else "已禁用",
+                name = it.name ?: "未知",
+                state = when (it.state) {
+                    BluetoothAdapter.STATE_OFF -> "已关闭"
+                    BluetoothAdapter.STATE_TURNING_OFF -> "正在关闭"
+                    BluetoothAdapter.STATE_ON -> "已开启"
+                    BluetoothAdapter.STATE_TURNING_ON -> "正在开启"
+                    else -> "未知"
+                },
+                connectedDevices = "${it.bondedDevices.size} 个已配对设备",
+                supportedProfiles = if (profiles.isEmpty()) "无" else profiles.joinToString(", ")
+            )
+        } ?: BluetoothInfo()
+    } else {
+        BluetoothInfo()
+    }
+
     return DeviceInfo(
         deviceModel = deviceModel,
         androidVersion = androidVersion,
@@ -512,7 +711,9 @@ private fun collectDeviceInfo(context: Context): DeviceInfo {
         batteryStatus = batteryStatus,
         batteryTemperature = batteryTemperature,
         batteryVoltage = batteryVoltage,
-        sensors = sensors
+        sensors = sensors,
+        locationInfo = LocationInfo(),
+        bluetoothInfo = bluetoothInfo
     )
 }
 
@@ -526,5 +727,5 @@ private fun formatSize(size: Double): String {
         unitIndex++
     }
     
-    return String.format("%.2f %s", value, units[unitIndex])
+    return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
 } 
