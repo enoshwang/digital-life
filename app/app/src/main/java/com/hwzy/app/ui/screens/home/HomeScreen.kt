@@ -63,7 +63,7 @@ fun HomeScreen(
         TabRow(
             selectedTabIndex = TopTabItem.items.indexOf(selectedTab),
             modifier = Modifier.fillMaxWidth(),
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.primary
         ) {
             TopTabItem.items.forEach { tab ->
