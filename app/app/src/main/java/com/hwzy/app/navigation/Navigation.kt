@@ -70,13 +70,13 @@ fun AppNavigation() {
                 enterTransition = {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 },
                 exitTransition = {
                     slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 }
             ) {
@@ -92,13 +92,13 @@ fun AppNavigation() {
                 enterTransition = {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 },
                 exitTransition = {
                     slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 }
             ) {
@@ -114,13 +114,13 @@ fun AppNavigation() {
                 enterTransition = {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 },
                 exitTransition = {
                     slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                        animationSpec = tween(200)  // 缩短动画时间
+                        animationSpec = tween(200)
                     )
                 }
             ) {
@@ -156,11 +156,7 @@ fun AppNavigation() {
                         },
                         onItemClick = { itemId ->
                             when (itemId) {
-                                "test" -> {
-                                    val route = Screen.DiscoverDetail.createRoute(itemId)
-                                    navController.navigate(route)
-                                }
-                                else -> navController.navigate(Screen.DiscoverDetail.route + "?id=$itemId")
+                                itemId -> navController.navigate(Screen.DiscoverDetail.createRoute(itemId))
                             }
                         }
                     )
