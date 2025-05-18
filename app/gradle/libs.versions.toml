@@ -1,5 +1,6 @@
 [versions]
 agp = "8.9.2"
+cameraxVersion = "1.5.0-beta01"
 coilCompose = "2.7.0"
 foundation = "1.8.1"
 fragmentKtx = "1.8.6"
@@ -15,6 +16,12 @@ retrofit = "2.11.0"
 timber = "5.0.1"
 
 [libraries]
+androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "cameraxVersion" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraxVersion" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraxVersion" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraxVersion" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraxVersion" }
+androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraxVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 androidx-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "foundation" }

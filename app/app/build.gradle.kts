@@ -59,6 +59,9 @@ android {
         // 启用 Compose 功能
         compose = true
         buildConfig = true
+
+        // 启用 ViewBinding
+        viewBinding = true
     }
 }
 
@@ -104,6 +107,14 @@ dependencies {
 
     // HTTP client
     implementation(libs.retrofit)
+
+    // camerax
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.video)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.extensions)
 }
 
 
