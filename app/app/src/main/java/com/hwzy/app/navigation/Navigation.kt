@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.hwzy.app.ui.screens.discover.CameraScreen
 import com.hwzy.app.ui.screens.discover.DiscoverScreen
 import com.hwzy.app.ui.screens.discover.TestScreen
 import com.hwzy.app.ui.screens.home.HomeScreen
@@ -166,6 +167,11 @@ fun AppNavigation() {
                         onNavigateToDetail = { route ->
                             navController.navigate(route)
                         },
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                    "camera" -> CameraScreen(
                         onBackClick = {
                             navController.popBackStack()
                         }

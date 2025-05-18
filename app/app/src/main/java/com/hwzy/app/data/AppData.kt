@@ -2,6 +2,7 @@ package com.hwzy.app.data
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -49,6 +50,7 @@ object AppData {
     private val discoverItems = listOf(
         // 生活服务类
         DiscoverItem("test", "测试", Icons.Filled.WbSunny, "生活服务", tags = listOf("测试", "生活")),
+        DiscoverItem("camera", "相机", Icons.Filled.Camera, "生活服务", tags = listOf("相机", "拍照")),
 
         // 工具类
         DiscoverItem("sensor", "传感器", Icons.Filled.WbSunny, "工具箱", tags = listOf("传感器", "设备信息"))
