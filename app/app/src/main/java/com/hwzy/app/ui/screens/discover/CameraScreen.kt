@@ -22,18 +22,26 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.VideocamOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +49,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -62,6 +72,7 @@ import java.util.Locale
 import java.util.concurrent.Executor
 
 private const val TAG = "CameraScreen"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(
@@ -110,6 +121,76 @@ fun CameraScreen(
     var recording: Recording? by remember { mutableStateOf(null) }
     var isRecording by remember { mutableStateOf(false) }
     var luminosity by remember { mutableFloatStateOf(0f) }
+    
+    // 相机选择器状态
+    var currentCameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
+    var showCameraSelector by remember { mutableStateOf(false) }
+    val availableCameraSelectors = remember {
+        listOf(
+            CameraSelector.DEFAULT_BACK_CAMERA to "后置相机",
+            CameraSelector.DEFAULT_FRONT_CAMERA to "前置相机"
+        )
+    }
+
+    // 添加相机预览状态
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
+
+    // 相机初始化函数
+    fun initializeCamera(
+        context: android.content.Context,
+        lifecycleOwner: androidx.lifecycle.LifecycleOwner,
+        previewView: PreviewView
+    ) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build()
+            preview.surfaceProvider = previewView.surfaceProvider
+
+            // 设置图像捕获
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .build()
+
+            // 设置视频录制
+            val recorder = Recorder.Builder()
+                .setQualitySelector(
+                    QualitySelector.from(
+                        Quality.HIGHEST,
+                        FallbackStrategy.higherQualityOrLowerThan(Quality.SD)
+                    )
+                )
+                .build()
+            videoCapture = VideoCapture.withOutput(recorder)
+
+            // 设置图像分析
+            val imageAnalyzer = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(
+                        ContextCompat.getMainExecutor(context),
+                        LuminosityAnalyzer { luma ->
+                            luminosity = luma
+                        }
+                    )
+                }
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    currentCameraSelector,
+                    preview,
+                    imageCapture,
+                    videoCapture,
+                    imageAnalyzer
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }, ContextCompat.getMainExecutor(context))
+    }
 
     Scaffold(
         topBar = {
@@ -146,115 +227,109 @@ fun CameraScreen(
                     factory = { context ->
                         PreviewView(context).apply {
                             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                            previewView = this
                         }
                     },
                     modifier = Modifier.fillMaxSize(),
-                    update = { previewView ->
-                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                        cameraProviderFuture.addListener({
-                            val cameraProvider = cameraProviderFuture.get()
-                            val preview = Preview.Builder().build()
-                            preview.surfaceProvider = previewView.surfaceProvider
-
-                            // 设置图像捕获
-                            imageCapture = ImageCapture.Builder()
-                                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                                .build()
-
-                            // 设置视频录制
-                            val recorder = Recorder.Builder()
-                                .setQualitySelector(
-                                    QualitySelector.from(
-                                        Quality.HIGHEST,
-                                        FallbackStrategy.higherQualityOrLowerThan(Quality.SD)
-                                    )
-                                )
-                                .build()
-                            videoCapture = VideoCapture.withOutput(recorder)
-
-                            // 设置图像分析
-                            val imageAnalyzer = ImageAnalysis.Builder()
-                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                .build()
-                                .also {
-                                    it.setAnalyzer(
-                                        ContextCompat.getMainExecutor(context),
-                                        LuminosityAnalyzer { luma ->
-                                            luminosity = luma
-                                        }
-                                    )
-                                }
-
-                            try {
-                                cameraProvider.unbindAll()
-                                cameraProvider.bindToLifecycle(
-                                    lifecycleOwner,
-                                    CameraSelector.DEFAULT_BACK_CAMERA,
-                                    preview,
-                                    imageCapture,
-                                    videoCapture,
-                                    imageAnalyzer
-                                )
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }, ContextCompat.getMainExecutor(context))
+                    update = { view ->
+                        previewView = view
+                        initializeCamera(context, lifecycleOwner, view)
                     }
                 )
 
                 // 底部控制栏
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                         .align(Alignment.BottomCenter),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 拍照按钮
+                    // 镜头切换按钮
                     IconButton(
-                        onClick = {
-                            imageCapture?.let { capture ->
-                                takePhoto(
-                                    context = context,
-                                    imageCapture = capture,
-                                    executor = ContextCompat.getMainExecutor(context)
-                                )
-                            }
-                        }
+                        onClick = { showCameraSelector = true },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Camera,
-                            contentDescription = "拍照",
+                            imageVector = Icons.Default.Cameraswitch,
+                            contentDescription = "切换镜头",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    // 录像按钮
-                    IconButton(
-                        onClick = {
-                            if (isRecording) {
-                                recording?.stop()
-                                recording = null
-                                isRecording = false
-                            } else {
-                                videoCapture?.let { capture ->
-                                    startRecording(
+                    // 拍照和录像按钮
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 拍照按钮
+                        Button(
+                            onClick = {
+                                imageCapture?.let { capture ->
+                                    takePhoto(
                                         context = context,
-                                        videoCapture = capture,
+                                        imageCapture = capture,
                                         executor = ContextCompat.getMainExecutor(context)
-                                    ) { newRecording ->
-                                        recording = newRecording
-                                        isRecording = true
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Camera,
+                                contentDescription = "拍照",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
+                        // 录像按钮
+                        Button(
+                            onClick = {
+                                if (isRecording) {
+                                    recording?.stop()
+                                    recording = null
+                                    isRecording = false
+                                } else {
+                                    videoCapture?.let { capture ->
+                                        startRecording(
+                                            context = context,
+                                            videoCapture = capture,
+                                            executor = ContextCompat.getMainExecutor(context)
+                                        ) { newRecording ->
+                                            recording = newRecording
+                                            isRecording = true
+                                        }
                                     }
                                 }
-                            }
+                            },
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRecording) 
+                                    MaterialTheme.colorScheme.error 
+                                else 
+                                    MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = if (isRecording) Icons.Default.VideocamOff else Icons.Default.Videocam,
+                                contentDescription = if (isRecording) "停止录像" else "开始录像",
+                                modifier = Modifier.size(32.dp)
+                            )
                         }
-                    ) {
-                        Icon(
-                            imageVector = if (isRecording) Icons.Default.VideocamOff else Icons.Default.Videocam,
-                            contentDescription = if (isRecording) "停止录像" else "开始录像",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
 
@@ -267,6 +342,38 @@ fun CameraScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
+
+                // 镜头选择对话框
+                if (showCameraSelector) {
+                    AlertDialog(
+                        onDismissRequest = { showCameraSelector = false },
+                        title = { Text("选择镜头") },
+                        text = {
+                            Column {
+                                availableCameraSelectors.forEach { (selector, name) ->
+                                    TextButton(
+                                        onClick = {
+                                            currentCameraSelector = selector
+                                            showCameraSelector = false
+                                            // 重新初始化相机
+                                            previewView?.let { view ->
+                                                initializeCamera(context, lifecycleOwner, view)
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(name)
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showCameraSelector = false }) {
+                                Text("取消")
+                            }
+                        }
+                    )
+                }
             } else {
                 Text(
                     text = "需要相机权限才能使用此功能",
