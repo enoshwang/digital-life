@@ -1,7 +1,6 @@
 package com.hwzy.app.ui.screens.discover
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.provider.MediaStore
@@ -52,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -121,9 +121,9 @@ fun CameraScreen(
     var recording: Recording? by remember { mutableStateOf(null) }
     var isRecording by remember { mutableStateOf(false) }
     var luminosity by remember { mutableFloatStateOf(0f) }
-    
-    // 相机选择器状态
-    var currentCameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    var cameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
     var showCameraSelector by remember { mutableStateOf(false) }
     val availableCameraSelectors = remember {
         listOf(
@@ -132,18 +132,24 @@ fun CameraScreen(
         )
     }
 
-    // 添加相机预览状态
-    var previewView by remember { mutableStateOf<PreviewView?>(null) }
-    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
-
     // 停止录制
-    fun stopRecording() {
+    val stopRecording: () -> Unit = {
         try {
-            recording?.stop()
-            recording = null
-            isRecording = false
+            if (isRecording && recording != null) {
+                Timber.tag(TAG).d("正在停止录制...")
+                recording?.apply {
+                    stop()
+                    Timber.tag(TAG).d("录制已停止")
+                }
+                recording = null
+                isRecording = false
+            } else {
+                Timber.tag(TAG).d("没有正在进行的录制")
+            }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "停止录制时发生错误")
+            isRecording = false
+            recording = null
         }
     }
 
@@ -200,7 +206,7 @@ fun CameraScreen(
                 try {
                     cameraProvider?.bindToLifecycle(
                         lifecycleOwner,
-                        currentCameraSelector,
+                        cameraSelector,
                         preview,
                         imageCapture,
                         videoCapture,
@@ -213,6 +219,93 @@ fun CameraScreen(
                 Timber.tag(TAG).e(e, "初始化相机时发生错误")
             }
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    // 开始录制
+    fun startRecording(
+        context: android.content.Context,
+        videoCapture: VideoCapture<Recorder>,
+        executor: Executor
+    ) {
+        if (isRecording) {
+            Timber.tag(TAG).d("已经在录制中")
+            return
+        }
+
+        // 检查录音权限
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Timber.tag(TAG).e("录音权限未授予")
+            return
+        }
+
+        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.CHINA)
+            .format(System.currentTimeMillis())
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
+        }
+
+        val mediaStoreOutputOptions = MediaStoreOutputOptions
+            .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
+            .build()
+
+        try {
+            Timber.tag(TAG).d("开始准备录制...")
+            val newRecording = videoCapture.output
+                .prepareRecording(context, mediaStoreOutputOptions)
+                .withAudioEnabled()
+                .start(executor) { event ->
+                    when (event) {
+                        is VideoRecordEvent.Start -> {
+                            Timber.tag(TAG).d("录制已开始")
+                            isRecording = true
+                        }
+                        is VideoRecordEvent.Finalize -> {
+                            if (event.hasError()) {
+                                Timber.tag(TAG).e("录制视频时发生错误: ${event.error}")
+                                isRecording = false
+                                recording = null
+                            } else {
+                                val msg = "视频已保存: ${event.outputResults.outputUri}"
+                                Timber.tag(TAG).d(msg)
+                                isRecording = false
+                                recording = null
+                            }
+                        }
+                    }
+                }
+            recording = newRecording
+            Timber.tag(TAG).d("录制对象已创建")
+        } catch (e: SecurityException) {
+            Timber.tag(TAG).e(e, "录音权限被拒绝")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "录制视频时发生错误")
+            isRecording = false
+            recording = null
+        }
+    }
+
+    // 在组件销毁时停止录制
+    DisposableEffect(Unit) {
+        onDispose {
+            if (isRecording) {
+                stopRecording()
+            }
+            cameraProvider?.unbindAll()
+        }
+    }
+
+    // 监听相机选择器变化
+    LaunchedEffect(cameraSelector) {
+        previewView?.let { view ->
+            initializeCamera(context, lifecycleOwner, view)
+        }
     }
 
     Scaffold(
@@ -256,7 +349,6 @@ fun CameraScreen(
                     modifier = Modifier.fillMaxSize(),
                     update = { view ->
                         previewView = view
-                        initializeCamera(context, lifecycleOwner, view)
                     }
                 )
 
@@ -321,17 +413,16 @@ fun CameraScreen(
                         Button(
                             onClick = {
                                 if (isRecording) {
+                                    Timber.tag(TAG).d("点击停止录制按钮")
                                     stopRecording()
                                 } else {
+                                    Timber.tag(TAG).d("点击开始录制按钮")
                                     videoCapture?.let { capture ->
                                         startRecording(
                                             context = context,
                                             videoCapture = capture,
                                             executor = ContextCompat.getMainExecutor(context)
-                                        ) { newRecording ->
-                                            recording = newRecording
-                                            isRecording = true
-                                        }
+                                        )
                                     }
                                 }
                             },
@@ -378,12 +469,8 @@ fun CameraScreen(
                                             if (isRecording) {
                                                 stopRecording()
                                             }
-                                            currentCameraSelector = selector
+                                            cameraSelector = selector
                                             showCameraSelector = false
-                                            // 重新初始化相机
-                                            previewView?.let { view ->
-                                                initializeCamera(context, lifecycleOwner, view)
-                                            }
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
@@ -444,63 +531,6 @@ private fun takePhoto(
             }
         }
     )
-}
-
-@SuppressLint("CheckResult")
-private fun startRecording(
-    context: android.content.Context,
-    videoCapture: VideoCapture<Recorder>,
-    executor: Executor,
-    @Suppress("unused") onRecordingStarted: (Recording) -> Unit
-) {
-    // 检查录音权限
-    if (ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.RECORD_AUDIO
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        Timber.tag(TAG).e("录音权限未授予")
-        return
-    }
-
-    val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.CHINA)
-        .format(System.currentTimeMillis())
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-        put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-        put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
-    }
-
-    val mediaStoreOutputOptions = MediaStoreOutputOptions
-        .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-        .setContentValues(contentValues)
-        .build()
-
-    try {
-        videoCapture.output
-            .prepareRecording(context, mediaStoreOutputOptions)
-            .withAudioEnabled()
-            .start(executor) { event ->
-                when (event) {
-                    is VideoRecordEvent.Start -> {
-                        // 录制已经开始，不需要额外的处理
-                        Timber.tag(TAG).d("开始录制视频")
-                    }
-                    is VideoRecordEvent.Finalize -> {
-                        if (event.hasError()) {
-                            Timber.tag(TAG).e("录制视频时发生错误: ${event.error}")
-                        } else {
-                            val msg = "视频已保存: ${event.outputResults.outputUri}"
-                            Timber.tag(TAG).d("msg:$msg")
-                        }
-                    }
-                }
-            }
-    } catch (e: SecurityException) {
-        Timber.tag(TAG).e(e, "录音权限被拒绝")
-    } catch (e: Exception) {
-        Timber.tag(TAG).e(e, "录制视频时发生错误")
-    }
 }
 
 private class LuminosityAnalyzer(private val listener: (Float) -> Unit) : ImageAnalysis.Analyzer {
