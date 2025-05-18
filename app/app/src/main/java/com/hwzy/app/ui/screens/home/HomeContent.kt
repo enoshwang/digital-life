@@ -15,13 +15,13 @@ import androidx.compose.ui.unit.dp
 internal fun HomeContent() {
     Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "主页内容",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.Black
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
