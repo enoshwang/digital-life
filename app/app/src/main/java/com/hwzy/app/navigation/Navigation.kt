@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.hwzy.app.ui.screens.discover.CameraScreen
 import com.hwzy.app.ui.screens.discover.DiscoverScreen
+import com.hwzy.app.ui.screens.discover.SensorScreen
 import com.hwzy.app.ui.screens.discover.TestScreen
 import com.hwzy.app.ui.screens.home.HomeScreen
 import com.hwzy.app.ui.screens.profile.ProfileScreen
@@ -172,6 +173,11 @@ fun AppNavigation() {
                         }
                     )
                     "camera" -> CameraScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                    "sensor" -> SensorScreen(
                         onBackClick = {
                             navController.popBackStack()
                         }
