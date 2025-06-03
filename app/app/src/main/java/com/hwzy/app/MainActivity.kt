@@ -94,15 +94,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         Timber.tag(tag).d("onKeyDown,  keyCode: $keyCode, event: $event")
-        if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-            Toast.makeText(this, "点击播放/暂停按钮", Toast.LENGTH_SHORT).show()
-        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
-            Toast.makeText(this, "点击下一首按钮", Toast.LENGTH_SHORT).show()
-        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-            Toast.makeText(this, "点击上一首按钮", Toast.LENGTH_SHORT).show()
-        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_STOP) {
-            Toast.makeText(this, "点击停止按钮", Toast.LENGTH_SHORT).show()
-        }
         return super.onKeyDown(keyCode, event)
     }
 
