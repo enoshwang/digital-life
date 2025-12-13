@@ -2,8 +2,6 @@ package com.hwzy.app
 
 import android.os.Bundle
 import android.view.KeyEvent
-import android.view.View
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,6 +16,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.hwzy.app.permission.PermissionManager
 import com.hwzy.app.ui.screens.CameraPreviewScreen
 import com.hwzy.app.ui.theme.AppTheme
@@ -36,15 +37,14 @@ class MainActivity : ComponentActivity() {
         // 启用全屏沉浸式模式（包含状态栏）
         enableEdgeToEdge()
         
-        // 隐藏系统UI（状态栏和导航栏），实现全屏沉浸式体验
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-        )
+        // 使用 WindowInsetsController 隐藏系统UI（状态栏和导航栏），实现全屏沉浸式体验
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.apply {
+            // 隐藏状态栏和导航栏
+            hide(WindowInsetsCompat.Type.systemBars())
+            // 设置沉浸式粘性模式（系统UI不会自动显示）
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
 
         setContent {
             AppTheme {
@@ -65,15 +65,18 @@ class MainActivity : ComponentActivity() {
 
         // 保持全屏模式
         DisposableEffect(Unit) {
-            val decorView = (context as? ComponentActivity)?.window?.decorView
-            decorView?.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            )
+            val activity = context as? ComponentActivity
+            val windowInsetsController = activity?.let {
+                WindowCompat.getInsetsController(it.window, it.window.decorView)
+            }
+            
+            windowInsetsController?.apply {
+                // 隐藏状态栏和导航栏
+                hide(WindowInsetsCompat.Type.systemBars())
+                // 设置沉浸式粘性模式
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            
             onDispose { }
         }
 
