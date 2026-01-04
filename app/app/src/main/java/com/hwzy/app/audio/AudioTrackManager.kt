@@ -11,7 +11,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.io.File
 import java.io.IOException
 
 object AudioTrackManager {
@@ -215,6 +214,164 @@ object AudioTrackManager {
         }
     }
 
+    /**
+     * 获取 WAV 文件头大小 - 并打印 WAV 文件头信息
+     */
+    private fun getWavHeaderSize(wavFileData: ByteArray): Int {
+        if (wavFileData.size < 12) {
+            Timber.tag(TAG).e("WAV 文件数据太小，无法解析")
+            return 0
+        }
+        
+        var offset = 0
+        
+        // 解析 RIFF chunk
+        val riffId = String(wavFileData, offset, 4)
+        offset += 4
+        if (riffId != "RIFF") {
+            Timber.tag(TAG).e("不是有效的 WAV 文件，RIFF ID: $riffId")
+            return 0
+        }
+        
+        val chunkSize = bytesToInt(wavFileData, offset, 4, littleEndian = true)
+        offset += 4
+        
+        val format = String(wavFileData, offset, 4)
+        offset += 4
+        if (format != "WAVE") {
+            Timber.tag(TAG).e("不是有效的 WAVE 格式，Format: $format")
+            return 0
+        }
+        
+        Timber.tag(TAG).d("=== WAV 文件头信息 ===")
+        Timber.tag(TAG).d("RIFF ID: $riffId")
+        Timber.tag(TAG).d("Chunk Size: $chunkSize")
+        Timber.tag(TAG).d("Format: $format")
+        
+        // 解析各个 chunk
+        var numChannels = 0
+        var sampleRate = 0
+        var bitsPerSample = 0
+        var byteRate = 0
+        var blockAlign = 0
+        var audioFormat = 0
+        var dataSize = 0
+        var dataChunkOffset = 0
+        var customInfo = ""
+        
+        while (offset < wavFileData.size - 8) {
+            val chunkId = String(wavFileData, offset, 4)
+            offset += 4
+            
+            val chunkSize = bytesToInt(wavFileData, offset, 4, littleEndian = true)
+            offset += 4
+            
+            when (chunkId) {
+                "fmt " -> {
+                    // 解析 fmt chunk
+                    audioFormat = bytesToInt(wavFileData, offset, 2, littleEndian = true)
+                    offset += 2
+                    
+                    numChannels = bytesToInt(wavFileData, offset, 2, littleEndian = true)
+                    offset += 2
+                    
+                    sampleRate = bytesToInt(wavFileData, offset, 4, littleEndian = true)
+                    offset += 4
+                    
+                    byteRate = bytesToInt(wavFileData, offset, 4, littleEndian = true)
+                    offset += 4
+                    
+                    blockAlign = bytesToInt(wavFileData, offset, 2, littleEndian = true)
+                    offset += 2
+                    
+                    bitsPerSample = bytesToInt(wavFileData, offset, 2, littleEndian = true)
+                    offset += 2
+                    
+                    // 如果有额外数据，跳过
+                    val extraDataSize = chunkSize - 16
+                    if (extraDataSize > 0) {
+                        offset += extraDataSize
+                    }
+                    
+                    Timber.tag(TAG).d("--- fmt chunk ---")
+                    Timber.tag(TAG).d("Audio Format: $audioFormat (1=PCM)")
+                    Timber.tag(TAG).d("声道数 (Num Channels): $numChannels")
+                    Timber.tag(TAG).d("采样率 (Sample Rate): $sampleRate Hz")
+                    Timber.tag(TAG).d("字节率 (Byte Rate): $byteRate bytes/sec")
+                    Timber.tag(TAG).d("块对齐 (Block Align): $blockAlign bytes")
+                    Timber.tag(TAG).d("位深 (Bits Per Sample): $bitsPerSample bits")
+                }
+                "data" -> {
+                    // 找到 data chunk
+                    dataSize = chunkSize
+                    dataChunkOffset = offset - 8 // 包含 chunk ID 和 size
+                    Timber.tag(TAG).d("--- data chunk ---")
+                    Timber.tag(TAG).d("数据大小 (Data Size): $dataSize bytes")
+                    offset += chunkSize // 跳过数据部分
+                    break // 找到 data chunk 后停止
+                }
+                "LIST" -> {
+                    // LIST chunk 可能包含自定义信息
+                    if (chunkSize > 0 && offset + chunkSize <= wavFileData.size) {
+                        val listData = String(wavFileData, offset, minOf(chunkSize, 256))
+                        customInfo = listData.trim()
+                        Timber.tag(TAG).d("--- LIST chunk (自定义信息) ---")
+                        Timber.tag(TAG).d("内容: $customInfo")
+                    }
+                    offset += chunkSize
+                }
+                else -> {
+                    // 其他未知 chunk，跳过
+                    Timber.tag(TAG).d("未知 chunk: $chunkId, 大小: $chunkSize")
+                    offset += chunkSize
+                }
+            }
+        }
+        
+        // 计算 header 总大小
+        val headerSize = if (dataChunkOffset > 0) {
+            dataChunkOffset + 8 // data chunk ID (4) + size (4)
+        } else {
+            offset // 如果没有找到 data chunk，使用当前偏移量
+        }
+        
+        Timber.tag(TAG).d("--- 汇总信息 ---")
+        Timber.tag(TAG).d("声道数: $numChannels")
+        Timber.tag(TAG).d("位深: $bitsPerSample bits")
+        Timber.tag(TAG).d("采样率: $sampleRate Hz")
+        if (customInfo.isNotEmpty()) {
+            Timber.tag(TAG).d("自定义信息: $customInfo")
+        }
+        Timber.tag(TAG).d("数据量大小: $dataSize bytes")
+        Timber.tag(TAG).d("Header 总大小: $headerSize bytes")
+        Timber.tag(TAG).d("==================")
+        
+        return headerSize
+    }
+    
+    /**
+     * 将字节数组转换为整数（支持大端和小端）
+     */
+    private fun bytesToInt(bytes: ByteArray, offset: Int, length: Int, littleEndian: Boolean = true): Int {
+        if (offset + length > bytes.size) {
+            return 0
+        }
+        
+        var result = 0
+        if (littleEndian) {
+            // 小端序（WAV 文件使用）
+            for (i in 0 until length) {
+                result = result or ((bytes[offset + i].toInt() and 0xFF) shl (i * 8))
+            }
+        } else {
+            // 大端序
+            for (i in 0 until length) {
+                result = (result shl 8) or (bytes[offset + i].toInt() and 0xFF)
+            }
+        }
+        return result
+    }
+
     // 带完成回调的播放（建议在需要获知结束时使用）
     fun playAudioFileWithListener(baseName: String, volume: Float? = null, onPlay: (() -> Unit)? = null, onCompleted: (() -> Unit)? = null) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -246,6 +403,8 @@ object AudioTrackManager {
                             Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
                             return@launch
                         }
+
+                        getWavHeaderSize(audioData)
 
                         // 获取已存在的 AudioTrack 或创建新的
                         var audioTrack = dynamicAudioTrackMap[fileName]
