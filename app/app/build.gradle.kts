@@ -14,6 +14,7 @@ plugins {
 android {
     // 项目命名空间
     namespace = "com.hwzy.app"
+
     // 编译SDK版本
     compileSdk = 35
 
@@ -31,6 +32,24 @@ android {
 
         // 测试运行器
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // NDK 配置
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters += listOf("arm64-v8a")
+        }
+
+        android {
+            externalNativeBuild {
+                ndkBuild {
+                    path = file("src/main/cpp/jni/Android.mk")
+                }
+
+                //  或者使用  cmake {
+                //         path = file("src/main/cpp/jni/Android.mk")
+                //     }
+            }
+        }
     }
 
     buildTypes {

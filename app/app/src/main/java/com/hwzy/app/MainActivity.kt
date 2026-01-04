@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.hwzy.app.permission.PermissionManager
 import com.hwzy.app.ui.screens.CameraPreviewScreen
 import com.hwzy.app.ui.theme.AppTheme
+import net.surina.soundtouch.SoundTouch
 import timber.log.Timber
 
 //  Activity 是用户界面的入口; Application 是后台运行的全局类，由系统隐式管理。
@@ -31,8 +32,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Timber.tag(tag).d("onCreate")
+
         super.onCreate(savedInstanceState)
+
         permissionManager = PermissionManager(this)
+
+        // 在主线程中初始化 OpenMP（如果启用）- 确保 SoundTouch 可以正确地运行, 同时打印版本信息
+        val soundTouchVersion = SoundTouch.getVersionString()
+        Timber.tag(tag).d("SoundTouch version: $soundTouchVersion")
 
         // 启用全屏沉浸式模式（包含状态栏）
         enableEdgeToEdge()
