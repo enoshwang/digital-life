@@ -12,7 +12,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 
 object AudioTrackManager {
@@ -26,13 +25,11 @@ object AudioTrackManager {
     private var isInitialized = false
     private lateinit var appContext: Context
 
-    // 固定 AudioTrack 对象 - 低延迟
-    private val audioTrackMap = mutableMapOf<String, AudioTrack>()
     // 对应文件的帧数（用于 marker 回调，单位：frame）
     private val audioTrackFrameCount = mutableMapOf<String, Int>()
 
     // 如果在播放音频时，发现文件都不存在，则尝试再加载一次
-    private var loadAgainCount = 2
+    private var loadAgainCount = 1
 
     // 音频数据缓存
     private val audioDataCache = HashMap<String, ByteArray>()
@@ -47,18 +44,19 @@ object AudioTrackManager {
     // 定期清理任务
     private var cleanupJob: Job? = null
 
+    /**
+     * 初始化 AudioTrackManager
+     */
     fun initialize(context: Context) {
         if (isInitialized) return
+        isInitialized = true
         appContext = context.applicationContext
-        Timber.tag(TAG).d("on AudioTrackManager initialize")
         
         CoroutineScope(Dispatchers.IO).launch {
             preloadAudioFiles()
         }
         startCleanupJob()
-        isInitialized = true
-        Timber.tag("MyApp").d("AliyunApikeyManager初始化$isInitialized")
-
+        Timber.tag(TAG).d("on initialize for AudioTrackManager")
     }
 
     /**
@@ -77,38 +75,6 @@ object AudioTrackManager {
                 }
             }
         }
-    }
-
-    //  获取所有 WAV 文件
-    private fun getAllWavFiles(directory: File): List<File> {
-        val wavFiles = mutableListOf<File>()
-
-        // 检查目录是否存在且可读
-        if (!directory.exists() || !directory.isDirectory || !directory.canRead()) {
-            Timber.tag(TAG).w("on getAllWavFiles: directory does not exist or is not readable. directory=${directory.path}")
-            return wavFiles
-        }
-
-        // 遍历目录下的所有内容
-        directory.listFiles()?.forEach { file ->
-            when {
-                // 如果是 .wav 文件，添加到结果列表
-                file.isFile && file.name.lowercase().endsWith(".wav") -> {
-                    // 如果列表存在相同文件名，则忽略这个文件
-                    if (wavFiles.any { it.name == file.name }) {
-                        Timber.tag(TAG).w("on getAllWavFiles: duplicate file name found: filePath=${file.path}")
-                    } else {
-                        wavFiles.add(file)
-                    }
-                }
-                // 如果是目录，递归搜索
-                file.isDirectory -> {
-                    wavFiles.addAll(getAllWavFiles(file))
-                }
-            }
-        }
-
-        return wavFiles
     }
 
     // 预加载所有 PCM 文件 - 从 assert/audio 目录
@@ -134,14 +100,15 @@ object AudioTrackManager {
                 }
             }
 
-            Timber.tag(TAG).d("on preloadAudioFiles: find ${wavFiles.size} audio files, audioTrackMap keys=${audioTrackMap.keys}")
-            Timber.tag(TAG).d("on preloadAudioFiles: cache size: ${audioDataCache.size}, keys=${audioDataCache.keys}")
-
+            Timber.tag(TAG).d("on preloadAudioFiles: find ${wavFiles.size} audio files, cache size: ${audioDataCache.size}, keys=${audioDataCache.keys}")
         } catch (e: IOException) {
-            Timber.tag(TAG).e(e, "Failed to list assets in audio/")
+            Timber.tag(TAG).e(e, "Failed to list assets in audio")
         }
     }
 
+    /**
+     * 创建 AudioTrack 对象
+     */
     private fun createAudioTrack(pcmDataSize: Int): AudioTrack {
         // 根据 PCM 文件格式配置 AudioTrack
         val sampleRate = 16000
@@ -167,41 +134,6 @@ object AudioTrackManager {
             .setBufferSizeInBytes(pcmDataSize.coerceAtLeast(bufferSize))
             .setTransferMode(AudioTrack.MODE_STATIC)
             .build()
-    }
-
-    // 加载音频文件
-    private fun loadAudioFile(filePath: String): ByteArray {
-        return try {
-            FileInputStream(filePath).use { input ->
-                val bytes = input.readBytes()
-                Timber.tag(TAG).v("on loadAudioFile: read audio file: $filePath, size: ${bytes.size} bytes")
-                bytes
-            }
-        } catch (e: IOException) {
-            Timber.tag(TAG).w("on loadAudioFile: error on read audio file: ${e.message}, filePath: $filePath")
-            byteArrayOf()
-        }
-    }
-
-    // 打断当前播放
-    private fun stopAudio() {
-        Timber.tag(TAG).d("on stopAudio")
-        // 打断 audioTrackMap 中的所有 AudioTrack
-        for (audioTrack in audioTrackMap.values) {
-            audioTrack.let {
-                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    it.stop()
-                }
-            }
-        }
-
-        dynamicAudioTrackMap.forEach { (_, audioTrack) ->
-            audioTrack.let {
-                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    it.stop()
-                }
-            }
-        }
     }
 
     // 定时清理缓存
@@ -252,58 +184,12 @@ object AudioTrackManager {
         }
     }
 
-    // 动态 AudioTrack 播放
-    private fun playAudioFileWithDynamicAudioTrack(fileName: String) {
-        try {
-            // 从缓存中获取音频数据
-            val audioData = audioDataCache[fileName] ?: run {
-                Timber.tag(TAG).w("on playAudioFileWithDynamicAudioTrack: audio data not found in cache: $fileName")
-                return
-            }
-
-            // 获取已存在的 AudioTrack 或创建新的
-            var audioTrack = dynamicAudioTrackMap[fileName]
-            if (audioTrack == null) {
-                val pcmDataSize = audioData.size - PCM_HEADER_SIZE
-                audioTrack = createAudioTrack(pcmDataSize)
-                audioTrack.write(audioData, PCM_HEADER_SIZE, pcmDataSize)
-                dynamicAudioTrackMap[fileName] = audioTrack
-                audioTrackFrameCount[fileName] = (pcmDataSize / 2)
-                Timber.tag(TAG).d("on playAudioFileWithDynamicAudioTrack: create new audio track: $fileName")
-                manageCacheSize()
-            }
-
-            // 更新最后使用时间
-            audioTrackLastUsedTime[fileName] = System.currentTimeMillis()
-
-            // 播放音频
-            synchronized(audioTrack) {
-                if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    audioTrack.stop()
-                }
-                audioTrack.playbackHeadPosition = 0
-                Timber.tag(TAG).d("on playAudioFileWithDynamicAudioTrack: start play audio file: $fileName")
-                audioTrack.play()
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).w("on playAudioFileWithDynamicAudioTrack: error: ${e.message}")
-        }
-    }
-
-    // 按 baseName 停止播放
+    // 停止播放指定音频
     fun stopAudioByBaseName(baseName: String) {
         try {
             Timber.tag(TAG).d("on stopAudioByBaseName: baseName=$baseName")
 
             val fileName = "$baseName.wav"
-            audioTrackMap[fileName]?.let { audioTrack ->
-                synchronized(audioTrack) {
-                    if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                        audioTrack.stop()
-                    }
-                }
-            }
-
             dynamicAudioTrackMap[fileName]?.let { audioTrack ->
                 synchronized(audioTrack) {
                     if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
@@ -313,6 +199,19 @@ object AudioTrackManager {
             }
         } catch (e: Exception) {
             Timber.tag(TAG).w("on stopAudioByBaseName: error=${e.message}")
+        }
+    }
+
+    // 停止播放所有音频
+    private fun stopAudio() {
+        Timber.tag(TAG).d("on stopAudio")
+
+        dynamicAudioTrackMap.forEach { (_, audioTrack) ->
+            audioTrack.let {
+                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    it.stop()
+                }
+            }
         }
     }
 
@@ -329,121 +228,80 @@ object AudioTrackManager {
                 }
 
                 // 尝试重新加载音频文件
-                if(audioTrackMap.keys.isEmpty() && audioDataCache.isEmpty() && loadAgainCount > 0) {
+                if(audioDataCache.isEmpty() && loadAgainCount > 0) {
                     Timber.tag(TAG).d("on playAudioFileWithListener: audio file list is null , try load again")
                     --loadAgainCount
                     preloadAudioFiles()
                 }
 
                 // 在 audioTrackMap 中查找对应的音频文件
-                var fileName = audioTrackMap.keys.find { it == "${baseName}.wav" }
+                var fileName = audioDataCache.keys.find { it == "${baseName}.wav" }
                 if (fileName == null) {
-                    fileName = audioDataCache.keys.find { it == "${baseName}.wav" }
-                    if (fileName == null) {
-                        Timber.tag(TAG).w("on playAudioFileWithListener: audio file not found: $baseName")
-                        return@launch
-                    } else {
-                        try {
-                            // 从缓存中获取音频数据
-                            val audioData = audioDataCache[fileName] ?: run {
-                                Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
-                                return@launch
-                            }
-
-                            // 获取已存在的 AudioTrack 或创建新的
-                            var audioTrack = dynamicAudioTrackMap[fileName]
-                            if (audioTrack == null) {
-                                val pcmDataSize = audioData.size - PCM_HEADER_SIZE
-                                audioTrack = createAudioTrack(pcmDataSize)
-                                audioTrack.write(audioData, PCM_HEADER_SIZE, pcmDataSize)
-                                dynamicAudioTrackMap[fileName] = audioTrack
-                                audioTrackFrameCount[fileName] = (pcmDataSize / 2)
-                                Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $fileName")
-                                manageCacheSize()
-                            }
-
-                            // 更新最后使用时间
-                            audioTrackLastUsedTime[fileName] = System.currentTimeMillis()
-
-                            val frames = audioTrackFrameCount[fileName] ?: 0
-                            var invoked = false
-
-                            // 播放音频
-                            synchronized(audioTrack) {
-                                if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                                    audioTrack.stop()
-                                }
-
-                                // 设置 marker（单位为帧）
-                                if (frames > 0) {
-                                    audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
-                                        override fun onMarkerReached(track: AudioTrack?) {
-                                            if (!invoked) {
-                                                invoked = true
-                                                try { onCompleted?.invoke() } catch (_: Exception) {}
-                                            }
-                                            // 清除 marker，避免复用时重复触发
-                                            try { audioTrack.setNotificationMarkerPosition(0) } catch (_: Exception) {}
-                                        }
-                                        override fun onPeriodicNotification(track: AudioTrack?) {}
-                                    })
-                                    try { audioTrack.setNotificationMarkerPosition(frames) } catch (_: Exception) {}
-                                }
-
-                                audioTrack.playbackHeadPosition = 0
-                                // 设置音量（0.0f - 1.0f），为空时保持默认
-                                volume?.let { v ->
-                                    try {
-                                        audioTrack.setVolume(v.coerceIn(0f, 1f))
-                                    } catch (_: Exception) {}
-                                }
-                                Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $fileName")
-                                try { onPlay?.invoke() } catch (_: Exception) {}
-                                audioTrack.play()
-                            }
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).w("on playAudioFileWithListener: find exception=${e.message}")
+                    Timber.tag(TAG).w("on playAudioFileWithListener: audio file not found: $baseName")
+                    return@launch
+                } else {
+                    try {
+                        // 从缓存中获取音频数据
+                        val audioData = audioDataCache[fileName] ?: run {
+                            Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
+                            return@launch
                         }
-                        return@launch
-                    }
-                }
 
-                // 获取预加载的 AudioTrack 并播放
-                val audioTrack = audioTrackMap[fileName] ?: dynamicAudioTrackMap[fileName] ?: return@launch
-                val frames = audioTrackFrameCount[fileName] ?: 0
-                var invoked = false
+                        // 获取已存在的 AudioTrack 或创建新的
+                        var audioTrack = dynamicAudioTrackMap[fileName]
+                        if (audioTrack == null) {
+                            val pcmDataSize = audioData.size - PCM_HEADER_SIZE
+                            audioTrack = createAudioTrack(pcmDataSize)
+                            audioTrack.write(audioData, PCM_HEADER_SIZE, pcmDataSize)
+                            dynamicAudioTrackMap[fileName] = audioTrack
+                            audioTrackFrameCount[fileName] = (pcmDataSize / 2)
+                            Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $fileName")
+                            manageCacheSize()
+                        }
 
-                synchronized(audioTrack) {
-                    if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                        audioTrack.stop()
-                    }
+                        // 更新最后使用时间
+                        audioTrackLastUsedTime[fileName] = System.currentTimeMillis()
 
-                    // 设置 marker（单位为帧）
-                    if (frames > 0) {
-                        audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
-                            override fun onMarkerReached(track: AudioTrack?) {
-                                if (!invoked) {
-                                    invoked = true
-                                    try { onCompleted?.invoke() } catch (_: Exception) {}
-                                }
-                                // 清除 marker，避免复用时重复触发
-                                try { audioTrack.setNotificationMarkerPosition(0) } catch (_: Exception) {}
+                        val frames = audioTrackFrameCount[fileName] ?: 0
+                        var invoked = false
+
+                        // 播放音频
+                        synchronized(audioTrack) {
+                            if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                                audioTrack.stop()
                             }
-                            override fun onPeriodicNotification(track: AudioTrack?) {}
-                        })
-                        try { audioTrack.setNotificationMarkerPosition(frames) } catch (_: Exception) {}
-                    }
 
-                    audioTrack.playbackHeadPosition = 0
-                    // 设置音量（0.0f - 1.0f），为空时保持默认
-                    volume?.let { v ->
-                        try {
-                            audioTrack.setVolume(v.coerceIn(0f, 1f))
-                        } catch (_: Exception) {}
+                            // 设置 marker（单位为帧）
+                            if (frames > 0) {
+                                audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+                                    override fun onMarkerReached(track: AudioTrack?) {
+                                        if (!invoked) {
+                                            invoked = true
+                                            try { onCompleted?.invoke() } catch (_: Exception) {}
+                                        }
+                                        // 清除 marker，避免复用时重复触发
+                                        try { audioTrack.setNotificationMarkerPosition(0) } catch (_: Exception) {}
+                                    }
+                                    override fun onPeriodicNotification(track: AudioTrack?) {}
+                                })
+                                try { audioTrack.setNotificationMarkerPosition(frames) } catch (_: Exception) {}
+                            }
+
+                            audioTrack.playbackHeadPosition = 0
+                            // 设置音量（0.0f - 1.0f），为空时保持默认
+                            volume?.let { v ->
+                                try {
+                                    audioTrack.setVolume(v.coerceIn(0f, 1f))
+                                } catch (_: Exception) {}
+                            }
+                            Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $fileName")
+                            try { onPlay?.invoke() } catch (_: Exception) {}
+                            audioTrack.play()
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).w("on playAudioFileWithListener: find exception=${e.message}")
                     }
-                    Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $baseName, frames=$frames")
-                    try { onPlay?.invoke() } catch (_: Exception) {}
-                    audioTrack.play()
+                    return@launch
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).w("on playAudioFileWithListener: find exception=${e.message}")
@@ -466,61 +324,5 @@ object AudioTrackManager {
             }
         )
         audioCompleted.await()
-    }
-
-    // 播放音频文件
-    private fun playAudioFile(baseName: String, @Suppress("unused") interruptAble: Boolean = true) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                Timber.tag(TAG).d("on playAudioFile: baseName=$baseName")
-
-                // 处理打断事件
-                if (baseName.isEmpty()) {
-                    stopAudio()
-                    return@launch
-                }
-
-                // 尝试重新加载音频文件
-                if(audioTrackMap.keys.isEmpty() && audioDataCache.isEmpty() && loadAgainCount > 0)
-                {
-                    Timber.tag(TAG).d("on playAudioFile: audio file list is null , try load again")
-                    --loadAgainCount
-                    preloadAudioFiles()
-                }
-
-                // 在 audioTrackMap 中查找对应的音频文件
-                var fileName = audioTrackMap.keys.find { it == "${baseName}.wav" }
-                if (fileName == null) {
-                    fileName = audioDataCache.keys.find { it == "${baseName}.wav" }
-                    if (fileName == null) {
-                        Timber.tag(TAG).w("on playAudioFile: audio file not found: $baseName")
-                        return@launch
-                    } else {
-                        playAudioFileWithDynamicAudioTrack(fileName)
-                        return@launch
-                    }
-                }
-
-                // 获取预加载的 AudioTrack 并播放（仅播放预加载的）
-                val audioTrack = audioTrackMap[fileName]  ?: return@launch
-                synchronized(audioTrack) {
-                    if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                        Timber.tag(TAG).d("on playAudioFile: do stop")
-                        audioTrack.stop()
-                    }
-
-                    if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                        Timber.tag(TAG).w("on playAudioFile: audio file is already playing. baseName: $baseName")
-                        return@launch
-                    }
-
-                    audioTrack.playbackHeadPosition = 0
-                    Timber.tag(TAG).d("on playAudioFile: start play audio file: $baseName")
-                    audioTrack.play()
-                }
-            } catch (e: Exception) {
-                Timber.tag(TAG).w("on playAudioFile: error: ${e.message}")
-            }
-        }
     }
 }

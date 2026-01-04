@@ -3,6 +3,7 @@ package com.hwzy.app
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.hwzy.app.audio.AudioTrackManager
 import com.hwzy.app.utils.SentryTree
 import com.tencent.mmkv.MMKV
 import io.sentry.android.core.SentryAndroid
@@ -34,6 +35,9 @@ class MyApp: Application() {
         // 初始化 MMKV
         val rootDir = MMKV.initialize(this)
         Timber.d("mmkv root: $rootDir")
+
+        // 初始化 AudioTrack
+        AudioTrackManager.initialize(this)
 
         // 监听应用中所有 Activity 的生命周期事件
         // 统计应用前后台状态（如 Activity 启动 / 停止计数）。

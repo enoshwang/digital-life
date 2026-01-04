@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hwzy.app.audio.AudioAssets
+import com.hwzy.app.audio.AudioTrackManager
 import com.hwzy.app.permission.PermissionManager
 import com.hwzy.app.ui.screens.CameraPreviewScreen
 import com.hwzy.app.ui.theme.AppTheme
@@ -40,6 +42,8 @@ class MainActivity : ComponentActivity() {
         // 在主线程中初始化 OpenMP（如果启用）- 确保 SoundTouch 可以正确地运行, 同时打印版本信息
         val soundTouchVersion = SoundTouch.getVersionString()
         Timber.tag(tag).d("SoundTouch version: $soundTouchVersion")
+
+        AudioTrackManager.playAudioFileWithListener(AudioAssets.AD_STARTED)
 
         // 启用全屏沉浸式模式（包含状态栏）
         enableEdgeToEdge()
