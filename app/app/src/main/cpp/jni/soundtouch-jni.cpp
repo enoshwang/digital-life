@@ -257,3 +257,116 @@ extern "C" DLL_PUBLIC int Java_net_surina_soundtouch_SoundTouch_processFile(JNIE
 
 	return 0;
 }
+
+
+// ============================================================================
+// 实时音频流处理接口
+// ============================================================================
+extern "C" DLL_PUBLIC void Java_net_surina_soundtouch_SoundTouch_setSampleRate(JNIEnv *env, jobject thiz, jlong handle, jint sampleRate)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    ptr->setSampleRate((uint)sampleRate);
+}
+
+
+extern "C" DLL_PUBLIC void Java_net_surina_soundtouch_SoundTouch_setChannels(JNIEnv *env, jobject thiz, jlong handle, jint channels)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    ptr->setChannels((uint)channels);
+}
+
+
+extern "C" DLL_PUBLIC void Java_net_surina_soundtouch_SoundTouch_putSamples(JNIEnv *env, jobject thiz, jlong handle, jfloatArray jsamples, jint numSamples)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+
+    if (jsamples == NULL || numSamples <= 0)
+    {
+        LOGV("JNI putSamples: invalid parameters");
+        return;
+    }
+
+    jfloat *samples = env->GetFloatArrayElements(jsamples, NULL);
+    if (samples == NULL)
+    {
+        LOGV("JNI putSamples: failed to get array elements");
+        return;
+    }
+
+    try
+    {
+        ptr->putSamples((const SAMPLETYPE*)samples, (uint)numSamples);
+    }
+    catch (const runtime_error &e)
+    {
+        const char *err = e.what();
+        LOGV("JNI exception in SoundTouch::putSamples: %s", err);
+        _setErrmsg(err);
+    }
+
+    env->ReleaseFloatArrayElements(jsamples, samples, JNI_ABORT);
+}
+
+
+extern "C" DLL_PUBLIC jint Java_net_surina_soundtouch_SoundTouch_receiveSamples(JNIEnv *env, jobject thiz, jlong handle, jfloatArray joutput, jint maxSamples)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+
+    if (joutput == NULL || maxSamples <= 0)
+    {
+        LOGV("JNI receiveSamples: invalid parameters");
+        return 0;
+    }
+
+    jfloat *output = env->GetFloatArrayElements(joutput, NULL);
+    if (output == NULL)
+    {
+        LOGV("JNI receiveSamples: failed to get array elements");
+        return 0;
+    }
+
+    jint numSamples = 0;
+    try
+    {
+        uint nSamples = ptr->receiveSamples((SAMPLETYPE*)output, (uint)maxSamples);
+        numSamples = (jint)nSamples;
+    }
+    catch (const runtime_error &e)
+    {
+        const char *err = e.what();
+        LOGV("JNI exception in SoundTouch::receiveSamples: %s", err);
+        _setErrmsg(err);
+    }
+
+    env->ReleaseFloatArrayElements(joutput, output, 0);
+
+    return numSamples;
+}
+
+
+extern "C" DLL_PUBLIC void Java_net_surina_soundtouch_SoundTouch_flush(JNIEnv *env, jobject thiz, jlong handle)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    ptr->flush();
+}
+
+
+extern "C" DLL_PUBLIC void Java_net_surina_soundtouch_SoundTouch_clear(JNIEnv *env, jobject thiz, jlong handle)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    ptr->clear();
+}
+
+
+extern "C" DLL_PUBLIC jint Java_net_surina_soundtouch_SoundTouch_numSamples(JNIEnv *env, jobject thiz, jlong handle)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    return (jint)ptr->numSamples();
+}
+
+
+extern "C" DLL_PUBLIC jboolean Java_net_surina_soundtouch_SoundTouch_isEmpty(JNIEnv *env, jobject thiz, jlong handle)
+{
+    SoundTouch *ptr = (SoundTouch*)handle;
+    return (jboolean)(ptr->isEmpty() ? JNI_TRUE : JNI_FALSE);
+}
