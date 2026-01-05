@@ -12,6 +12,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import net.surina.soundtouch.SoundTouch
 
 object AudioTrackManager {
     private const val TAG = "AudioTrackManager"
@@ -26,9 +29,6 @@ object AudioTrackManager {
 
     // 对应文件的帧数（用于 marker 回调，单位：frame）
     private val audioTrackFrameCount = mutableMapOf<String, Int>()
-
-    // 如果在播放音频时，发现文件都不存在，则尝试再加载一次
-    private var loadAgainCount = 1
 
     // 音频数据缓存
     private val audioDataCache = HashMap<String, ByteArray>()
@@ -242,11 +242,7 @@ object AudioTrackManager {
             Timber.tag(TAG).e("不是有效的 WAVE 格式，Format: $format")
             return 0
         }
-        
-        Timber.tag(TAG).d("=== WAV 文件头信息 ===")
-        Timber.tag(TAG).d("RIFF ID: $riffId")
-        Timber.tag(TAG).d("Chunk Size: $chunkSize")
-        Timber.tag(TAG).d("Format: $format")
+
         
         // 解析各个 chunk
         var numChannels = 0
@@ -292,21 +288,11 @@ object AudioTrackManager {
                     if (extraDataSize > 0) {
                         offset += extraDataSize
                     }
-                    
-                    Timber.tag(TAG).d("--- fmt chunk ---")
-                    Timber.tag(TAG).d("Audio Format: $audioFormat (1=PCM)")
-                    Timber.tag(TAG).d("声道数 (Num Channels): $numChannels")
-                    Timber.tag(TAG).d("采样率 (Sample Rate): $sampleRate Hz")
-                    Timber.tag(TAG).d("字节率 (Byte Rate): $byteRate bytes/sec")
-                    Timber.tag(TAG).d("块对齐 (Block Align): $blockAlign bytes")
-                    Timber.tag(TAG).d("位深 (Bits Per Sample): $bitsPerSample bits")
                 }
                 "data" -> {
                     // 找到 data chunk
                     dataSize = chunkSize
                     dataChunkOffset = offset - 8 // 包含 chunk ID 和 size
-                    Timber.tag(TAG).d("--- data chunk ---")
-                    Timber.tag(TAG).d("数据大小 (Data Size): $dataSize bytes")
                     offset += chunkSize // 跳过数据部分
                     break // 找到 data chunk 后停止
                 }
@@ -315,8 +301,6 @@ object AudioTrackManager {
                     if (chunkSize > 0 && offset + chunkSize <= wavFileData.size) {
                         val listData = String(wavFileData, offset, minOf(chunkSize, 256))
                         customInfo = listData.trim()
-                        Timber.tag(TAG).d("--- LIST chunk (自定义信息) ---")
-                        Timber.tag(TAG).d("内容: $customInfo")
                     }
                     offset += chunkSize
                 }
@@ -335,7 +319,7 @@ object AudioTrackManager {
             offset // 如果没有找到 data chunk，使用当前偏移量
         }
         
-        Timber.tag(TAG).d("--- 汇总信息 ---")
+        Timber.tag(TAG).d("--- 音频信息 ---")
         Timber.tag(TAG).d("声道数: $numChannels")
         Timber.tag(TAG).d("位深: $bitsPerSample bits")
         Timber.tag(TAG).d("采样率: $sampleRate Hz")
@@ -373,55 +357,56 @@ object AudioTrackManager {
     }
 
     // 带完成回调的播放（建议在需要获知结束时使用）
-    fun playAudioFileWithListener(baseName: String, volume: Float? = null, onPlay: (() -> Unit)? = null, onCompleted: (() -> Unit)? = null) {
+    fun playAudioFileWithListener(baseName: String, volume: Float? = null, speed: Float = 1.0f, onPlay: (() -> Unit)? = null, onCompleted: (() -> Unit)? = null) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Timber.tag(TAG).d("on playAudioFileWithListener: baseName=$baseName")
-
-                // 处理打断事件
+                Timber.tag(TAG).d("on playAudioFileWithListener: baseName=$baseName, speed=$speed, volume=$volume, onPlay=$onPlay, onCompleted=$onCompleted")
                 if (baseName.isEmpty()) {
-                    stopAudio()
                     return@launch
-                }
-
-                // 尝试重新加载音频文件
-                if(audioDataCache.isEmpty() && loadAgainCount > 0) {
-                    Timber.tag(TAG).d("on playAudioFileWithListener: audio file list is null , try load again")
-                    --loadAgainCount
-                    preloadAudioFiles()
                 }
 
                 // 在 audioTrackMap 中查找对应的音频文件
                 var fileName = audioDataCache.keys.find { it == "${baseName}.wav" }
                 if (fileName == null) {
-                    Timber.tag(TAG).w("on playAudioFileWithListener: audio file not found: $baseName")
+                    Timber.tag(TAG).w("on playAudioFileWithListener: audio file not found, baseName=$baseName")
                     return@launch
                 } else {
                     try {
-                        // 从缓存中获取音频数据
-                        val audioData = audioDataCache[fileName] ?: run {
-                            Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
-                            return@launch
-                        }
-
-                        getWavHeaderSize(audioData)
-
-                        // 获取已存在的 AudioTrack 或创建新的
-                        var audioTrack = dynamicAudioTrackMap[fileName]
+                        // 使用文件名和速度作为缓存键，因为不同速度需要不同的 AudioTrack
+                        val cacheKey = if (speed != 1.0f) "${fileName}_speed_$speed" else fileName
+                        
+                        // 先检查 AudioTrack 是否已缓存
+                        var audioTrack = dynamicAudioTrackMap[cacheKey]
                         if (audioTrack == null) {
-                            val pcmDataSize = audioData.size - PCM_HEADER_SIZE
+                            // 从缓存中获取音频数据
+                            val audioData = audioDataCache[fileName] ?: run {
+                                Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
+                                return@launch
+                            }
+                            getWavHeaderSize(audioData)
+
+                            // 如果缓存不存在，才进行音频处理
+                            val processedAudioData = if (speed != 1.0f) {
+                                Timber.tag(TAG).d("on playAudioFileWithListener: processing audio with speed=$speed")
+                                processAudioWithSpeed(audioData, speed)
+                            } else {
+                                audioData
+                            }
+
+                            // 创建新的 AudioTrack
+                            val pcmDataSize = processedAudioData.size - PCM_HEADER_SIZE
                             audioTrack = createAudioTrack(pcmDataSize)
-                            audioTrack.write(audioData, PCM_HEADER_SIZE, pcmDataSize)
-                            dynamicAudioTrackMap[fileName] = audioTrack
-                            audioTrackFrameCount[fileName] = (pcmDataSize / 2)
-                            Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $fileName")
+                            audioTrack.write(processedAudioData, PCM_HEADER_SIZE, pcmDataSize)
+                            dynamicAudioTrackMap[cacheKey] = audioTrack
+                            audioTrackFrameCount[cacheKey] = (pcmDataSize / 2)
+                            Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $cacheKey")
                             manageCacheSize()
                         }
 
                         // 更新最后使用时间
-                        audioTrackLastUsedTime[fileName] = System.currentTimeMillis()
+                        audioTrackLastUsedTime[cacheKey] = System.currentTimeMillis()
 
-                        val frames = audioTrackFrameCount[fileName] ?: 0
+                        val frames = audioTrackFrameCount[cacheKey] ?: 0
                         var invoked = false
 
                         // 播放音频
@@ -447,12 +432,14 @@ object AudioTrackManager {
                             }
 
                             audioTrack.playbackHeadPosition = 0
+
                             // 设置音量（0.0f - 1.0f），为空时保持默认
                             volume?.let { v ->
                                 try {
                                     audioTrack.setVolume(v.coerceIn(0f, 1f))
                                 } catch (_: Exception) {}
                             }
+
                             Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $fileName")
                             try { onPlay?.invoke() } catch (_: Exception) {}
                             audioTrack.play()
@@ -469,19 +456,109 @@ object AudioTrackManager {
     }
 
     /**
-     * 播放音频并等待播放完成（suspend 函数，可在协程中使用）
-     * @param baseName 音频文件名（不含扩展名）
-     * @param volume 音量（0.0f - 1.0f），为空时使用默认音量
+     * 使用 SoundTouch 实时处理音频数据的速度
+     * @param wavData 原始 WAV 文件数据（包含文件头）
+     * @param speed 播放速度，1.0 = 原始速度
+     * @return 处理后的 WAV 文件数据（包含文件头）
      */
-    suspend fun playAudioAndWait(baseName: String, volume: Float? = null) {
-        val audioCompleted = CompletableDeferred<Unit>()
-        playAudioFileWithListener(
-            baseName,
-            volume = volume,
-            onCompleted = {
-                audioCompleted.complete(Unit)
+    private fun processAudioWithSpeed(wavData: ByteArray, speed: Float): ByteArray {
+        val headerSize = PCM_HEADER_SIZE
+        if (wavData.size <= headerSize) {
+            Timber.tag(TAG).w("on processAudioWithSpeed: audio data too small")
+            return wavData
+        }
+
+        // 提取 PCM 数据（跳过文件头）
+        val pcmData = ByteArray(wavData.size - headerSize)
+        System.arraycopy(wavData, headerSize, pcmData, 0, pcmData.size)
+
+        // 将 16-bit PCM 数据转换为 Float 数组
+        val samples = ShortArray(pcmData.size / 2)
+        ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples)
+        val floatSamples = FloatArray(samples.size) { samples[it] / 32768.0f }
+
+        // 使用 SoundTouch 处理
+        val soundTouch = SoundTouch.create()
+        try {
+            // 配置 SoundTouch（根据 WAV 文件格式，这里使用固定值，实际可以从文件头解析）
+            soundTouch.setSampleRate(16000)
+            soundTouch.setChannels(1) // 单声道
+            soundTouch.setTempo(speed)
+
+            // 处理音频数据
+            val chunkSize = 4096 // 每次处理的样本数
+            val processedSamples = mutableListOf<Float>()
+            
+            // 分块输入数据
+            var offset = 0
+            while (offset < floatSamples.size) {
+                val chunk = floatSamples.copyOfRange(offset, minOf(offset + chunkSize, floatSamples.size))
+                soundTouch.putSamples(chunk, chunk.size)
+                offset += chunk.size
+
+                // 接收处理后的数据
+                val outputBuffer = FloatArray(chunkSize)
+                var received = soundTouch.receiveSamples(outputBuffer, chunkSize)
+                while (received > 0) {
+                    processedSamples.addAll(outputBuffer.take(received))
+                    received = soundTouch.receiveSamples(outputBuffer, chunkSize)
+                }
             }
-        )
-        audioCompleted.await()
+
+            // 刷新处理管道，获取剩余数据
+            soundTouch.flush()
+            val outputBuffer = FloatArray(chunkSize)
+            var received = soundTouch.receiveSamples(outputBuffer, chunkSize)
+            while (received > 0) {
+                processedSamples.addAll(outputBuffer.take(received))
+                received = soundTouch.receiveSamples(outputBuffer, chunkSize)
+            }
+
+            // 将 Float 数组转换回 16-bit PCM
+            val processedShorts = processedSamples.map { (it.coerceIn(-1f, 1f) * 32767f).toInt().coerceIn(-32768, 32767).toShort() }.toShortArray()
+            val processedPcmData = ByteArray(processedShorts.size * 2)
+            ByteBuffer.wrap(processedPcmData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(processedShorts)
+
+            // 重新构建 WAV 文件（更新文件头中的 data chunk 大小）
+            val newDataSize = processedPcmData.size
+            val newWavData = ByteArray(headerSize + newDataSize)
+            
+            // 复制原始文件头
+            System.arraycopy(wavData, 0, newWavData, 0, headerSize)
+            
+            // 更新 RIFF chunk size（总文件大小 - 8）
+            val riffSize = newWavData.size - 8
+            newWavData[4] = (riffSize and 0xFF).toByte()
+            newWavData[5] = ((riffSize shr 8) and 0xFF).toByte()
+            newWavData[6] = ((riffSize shr 16) and 0xFF).toByte()
+            newWavData[7] = ((riffSize shr 24) and 0xFF).toByte()
+            
+            // 查找并更新 data chunk size
+            var headerOffset = 12 // 跳过 RIFF header
+            while (headerOffset < headerSize - 8) {
+                val chunkId = String(newWavData, headerOffset, 4)
+                if (chunkId == "data") {
+                    // 更新 data chunk size
+                    newWavData[headerOffset + 4] = (newDataSize and 0xFF).toByte()
+                    newWavData[headerOffset + 5] = ((newDataSize shr 8) and 0xFF).toByte()
+                    newWavData[headerOffset + 6] = ((newDataSize shr 16) and 0xFF).toByte()
+                    newWavData[headerOffset + 7] = ((newDataSize shr 24) and 0xFF).toByte()
+                    break
+                }
+                val currentChunkSize = bytesToInt(newWavData, headerOffset + 4, 4, littleEndian = true)
+                headerOffset += 8 + currentChunkSize
+            }
+            
+            // 复制处理后的 PCM 数据
+            System.arraycopy(processedPcmData, 0, newWavData, headerSize, newDataSize)
+
+            Timber.tag(TAG).d("on processAudioWithSpeed: processed ${floatSamples.size} samples to ${processedSamples.size} samples")
+            return newWavData
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "on processAudioWithSpeed: error processing audio")
+            return wavData // 出错时返回原始数据
+        } finally {
+            soundTouch.close()
+        }
     }
 }

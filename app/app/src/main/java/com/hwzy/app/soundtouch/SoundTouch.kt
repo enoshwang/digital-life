@@ -75,6 +75,71 @@ class SoundTouch private constructor(private val handle: Long) {
     }
 
     /**
+     * 设置采样率
+     * @param sampleRate 采样率（Hz）
+     */
+    fun setSampleRate(sampleRate: Int) {
+        setSampleRate(handle, sampleRate)
+    }
+
+    /**
+     * 设置声道数
+     * @param channels 声道数，1 = 单声道，2 = 立体声
+     */
+    fun setChannels(channels: Int) {
+        setChannels(handle, channels)
+    }
+
+    /**
+     * 输入音频样本进行处理
+     * @param samples 音频样本数组（Float 数组）
+     * @param numSamples 样本数量
+     */
+    fun putSamples(samples: FloatArray, numSamples: Int) {
+        putSamples(handle, samples, numSamples)
+    }
+
+    /**
+     * 接收处理后的音频样本
+     * @param output 输出数组
+     * @param maxSamples 最大样本数
+     * @return 实际接收到的样本数
+     */
+    fun receiveSamples(output: FloatArray, maxSamples: Int): Int {
+        return receiveSamples(handle, output, maxSamples)
+    }
+
+    /**
+     * 刷新处理管道，确保所有输入数据都被处理
+     */
+    fun flush() {
+        flush(handle)
+    }
+
+    /**
+     * 清空所有缓冲数据
+     */
+    fun clear() {
+        clear(handle)
+    }
+
+    /**
+     * 获取当前可用的样本数
+     * @return 可用样本数
+     */
+    fun numSamples(): Int {
+        return numSamples(handle)
+    }
+
+    /**
+     * 检查处理管道是否为空
+     * @return true 如果为空
+     */
+    fun isEmpty(): Boolean {
+        return isEmpty(handle)
+    }
+
+    /**
      * 释放资源
      */
     fun close() {
@@ -86,6 +151,14 @@ class SoundTouch private constructor(private val handle: Long) {
     private external fun setPitchSemiTones(handle: Long, pitch: Float)
     private external fun setSpeed(handle: Long, speed: Float)
     private external fun processFile(handle: Long, inputFile: String, outputFile: String): Int
+    private external fun setSampleRate(handle: Long, sampleRate: Int)
+    private external fun setChannels(handle: Long, channels: Int)
+    private external fun putSamples(handle: Long, samples: FloatArray, numSamples: Int)
+    private external fun receiveSamples(handle: Long, output: FloatArray, maxSamples: Int): Int
+    private external fun flush(handle: Long)
+    private external fun clear(handle: Long)
+    private external fun numSamples(handle: Long): Int
+    private external fun isEmpty(handle: Long): Boolean
     private external fun deleteInstance(handle: Long)
 
     /**

@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         val soundTouchVersion = SoundTouch.getVersionString()
         Timber.tag(tag).d("SoundTouch version: $soundTouchVersion")
 
-        AudioTrackManager.playAudioFileWithListener(AudioAssets.AD_STARTED)
+        AudioTrackManager.playAudioFileWithListener(AudioAssets.AD_STARTED, speed = 1.5f)
 
         // 启用全屏沉浸式模式（包含状态栏）
         enableEdgeToEdge()
