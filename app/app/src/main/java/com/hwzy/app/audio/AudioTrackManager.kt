@@ -22,6 +22,22 @@ object AudioTrackManager {
     // wav 文件头
     private const val PCM_HEADER_SIZE = 78
 
+    /**
+     * WAV 文件信息数据类
+     */
+    data class WavFileInfo(
+        val headerSize: Int,              // 文件头大小（字节）
+        val numChannels: Int,             // 声道数（1=单声道, 2=立体声）
+        val sampleRate: Int,              // 采样率（Hz）
+        val bitsPerSample: Int,           // 位深（bits）
+        val byteRate: Int,                // 字节率（bytes/sec）
+        val blockAlign: Int,              // 块对齐（bytes）
+        val audioFormat: Int,             // 音频格式（1=PCM）
+        val dataSize: Int,                // PCM 数据大小（字节）
+        val dataChunkOffset: Int,         // data chunk 偏移位置
+        val customInfo: String = ""       // 自定义信息（如果有）
+    )
+
     // 初始化相关
     @Volatile
     private var isInitialized = false
@@ -215,12 +231,14 @@ object AudioTrackManager {
     }
 
     /**
-     * 获取 WAV 文件头大小 - 并打印 WAV 文件头信息
+     * 解析 WAV 文件头信息
+     * @param wavFileData WAV 文件数据
+     * @return WavFileInfo 对象，如果解析失败返回 null
      */
-    private fun getWavHeaderSize(wavFileData: ByteArray): Int {
+    private fun parseWavFileInfo(wavFileData: ByteArray): WavFileInfo? {
         if (wavFileData.size < 12) {
             Timber.tag(TAG).e("WAV 文件数据太小，无法解析")
-            return 0
+            return null
         }
         
         var offset = 0
@@ -230,7 +248,7 @@ object AudioTrackManager {
         offset += 4
         if (riffId != "RIFF") {
             Timber.tag(TAG).e("不是有效的 WAV 文件，RIFF ID: $riffId")
-            return 0
+            return null
         }
         
         val chunkSize = bytesToInt(wavFileData, offset, 4, littleEndian = true)
@@ -240,10 +258,9 @@ object AudioTrackManager {
         offset += 4
         if (format != "WAVE") {
             Timber.tag(TAG).e("不是有效的 WAVE 格式，Format: $format")
-            return 0
+            return null
         }
 
-        
         // 解析各个 chunk
         var numChannels = 0
         var sampleRate = 0
@@ -330,7 +347,18 @@ object AudioTrackManager {
         Timber.tag(TAG).d("Header 总大小: $headerSize bytes")
         Timber.tag(TAG).d("==================")
         
-        return headerSize
+        return WavFileInfo(
+            headerSize = headerSize,
+            numChannels = numChannels,
+            sampleRate = sampleRate,
+            bitsPerSample = bitsPerSample,
+            byteRate = byteRate,
+            blockAlign = blockAlign,
+            audioFormat = audioFormat,
+            dataSize = dataSize,
+            dataChunkOffset = dataChunkOffset,
+            customInfo = customInfo
+        )
     }
     
     /**
@@ -371,83 +399,83 @@ object AudioTrackManager {
                     Timber.tag(TAG).w("on playAudioFileWithListener: audio file not found, baseName=$baseName")
                     return@launch
                 } else {
-                    try {
-                        // 使用文件名和速度作为缓存键，因为不同速度需要不同的 AudioTrack
-                        val cacheKey = if (speed != 1.0f) "${fileName}_speed_$speed" else fileName
-                        
-                        // 先检查 AudioTrack 是否已缓存
-                        var audioTrack = dynamicAudioTrackMap[cacheKey]
-                        if (audioTrack == null) {
-                            // 从缓存中获取音频数据
-                            val audioData = audioDataCache[fileName] ?: run {
-                                Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
-                                return@launch
-                            }
-                            getWavHeaderSize(audioData)
+                    // 使用文件名和速度作为缓存键，因为不同速度需要不同的 AudioTrack
+                    val cacheKey = if (speed != 1.0f) "${fileName}_speed_$speed" else fileName
 
-                            // 如果缓存不存在，才进行音频处理
-                            val processedAudioData = if (speed != 1.0f) {
-                                Timber.tag(TAG).d("on playAudioFileWithListener: processing audio with speed=$speed")
-                                processAudioWithSpeed(audioData, speed)
-                            } else {
-                                audioData
-                            }
-
-                            // 创建新的 AudioTrack
-                            val pcmDataSize = processedAudioData.size - PCM_HEADER_SIZE
-                            audioTrack = createAudioTrack(pcmDataSize)
-                            audioTrack.write(processedAudioData, PCM_HEADER_SIZE, pcmDataSize)
-                            dynamicAudioTrackMap[cacheKey] = audioTrack
-                            audioTrackFrameCount[cacheKey] = (pcmDataSize / 2)
-                            Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $cacheKey")
-                            manageCacheSize()
+                    // 先检查 AudioTrack 是否已缓存
+                    var audioTrack = dynamicAudioTrackMap[cacheKey]
+                    if (audioTrack == null) {
+                        // 从缓存中获取音频数据
+                        val audioData = audioDataCache[fileName] ?: run {
+                            Timber.tag(TAG).w("on playAudioFileWithListener: audio data not found in cache: $fileName")
+                            return@launch
                         }
 
-                        // 更新最后使用时间
-                        audioTrackLastUsedTime[cacheKey] = System.currentTimeMillis()
+                        val wavInfo = parseWavFileInfo(audioData)
+                        val headerSize = wavInfo?.headerSize ?: PCM_HEADER_SIZE
 
-                        val frames = audioTrackFrameCount[cacheKey] ?: 0
-                        var invoked = false
-
-                        // 播放音频
-                        synchronized(audioTrack) {
-                            if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                                audioTrack.stop()
-                            }
-
-                            // 设置 marker（单位为帧）
-                            if (frames > 0) {
-                                audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
-                                    override fun onMarkerReached(track: AudioTrack?) {
-                                        if (!invoked) {
-                                            invoked = true
-                                            try { onCompleted?.invoke() } catch (_: Exception) {}
-                                        }
-                                        // 清除 marker，避免复用时重复触发
-                                        try { audioTrack.setNotificationMarkerPosition(0) } catch (_: Exception) {}
-                                    }
-                                    override fun onPeriodicNotification(track: AudioTrack?) {}
-                                })
-                                try { audioTrack.setNotificationMarkerPosition(frames) } catch (_: Exception) {}
-                            }
-
-                            audioTrack.playbackHeadPosition = 0
-
-                            // 设置音量（0.0f - 1.0f），为空时保持默认
-                            volume?.let { v ->
-                                try {
-                                    audioTrack.setVolume(v.coerceIn(0f, 1f))
-                                } catch (_: Exception) {}
-                            }
-
-                            Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $fileName")
-                            try { onPlay?.invoke() } catch (_: Exception) {}
-                            audioTrack.play()
+                        // 如果缓存不存在，才进行音频处理
+                        val processedAudioData = if (speed != 1.0f) {
+                            Timber.tag(TAG).d("on playAudioFileWithListener: processing audio with speed=$speed")
+                            processAudioWithSpeed(audioData, speed, wavInfo)
+                        } else {
+                            audioData
                         }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).w("on playAudioFileWithListener: find exception=${e.message}")
+
+                        // 创建新的 AudioTrack
+                        // 对于处理后的音频，需要重新解析 headerSize（因为 processAudioWithSpeed 可能改变了文件头）
+                        val processedWavInfo = if (speed != 1.0f) parseWavFileInfo(processedAudioData) else wavInfo
+                        val processedHeaderSize = processedWavInfo?.headerSize ?: PCM_HEADER_SIZE
+                        val pcmDataSize = processedAudioData.size - processedHeaderSize
+                        audioTrack = createAudioTrack(pcmDataSize)
+                        audioTrack.write(processedAudioData, processedHeaderSize, pcmDataSize)
+                        dynamicAudioTrackMap[cacheKey] = audioTrack
+                        audioTrackFrameCount[cacheKey] = (pcmDataSize / 2)
+                        Timber.tag(TAG).d("on playAudioFileWithListener: create new audio track: $cacheKey")
+                        manageCacheSize()
                     }
-                    return@launch
+
+                    // 更新最后使用时间
+                    audioTrackLastUsedTime[cacheKey] = System.currentTimeMillis()
+
+                    val frames = audioTrackFrameCount[cacheKey] ?: 0
+                    var invoked = false
+
+                    // 播放音频
+                    synchronized(audioTrack) {
+                        if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                            audioTrack.stop()
+                        }
+
+                        // 设置 marker（单位为帧）
+                        if (frames > 0) {
+                            audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+                                override fun onMarkerReached(track: AudioTrack?) {
+                                    if (!invoked) {
+                                        invoked = true
+                                        try { onCompleted?.invoke() } catch (_: Exception) {}
+                                    }
+                                    // 清除 marker，避免复用时重复触发
+                                    try { audioTrack.setNotificationMarkerPosition(0) } catch (_: Exception) {}
+                                }
+                                override fun onPeriodicNotification(track: AudioTrack?) {}
+                            })
+                            try { audioTrack.setNotificationMarkerPosition(frames) } catch (_: Exception) {}
+                        }
+
+                        audioTrack.playbackHeadPosition = 0
+
+                        // 设置音量（0.0f - 1.0f），为空时保持默认
+                        volume?.let { v ->
+                            try {
+                                audioTrack.setVolume(v.coerceIn(0f, 1f))
+                            } catch (_: Exception) {}
+                        }
+
+                        Timber.tag(TAG).d("on playAudioFileWithListener: start play audio file: $fileName")
+                        try { onPlay?.invoke() } catch (_: Exception) {}
+                        audioTrack.play()
+                    }
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).w("on playAudioFileWithListener: find exception=${e.message}")
@@ -459,10 +487,11 @@ object AudioTrackManager {
      * 使用 SoundTouch 实时处理音频数据的速度
      * @param wavData 原始 WAV 文件数据（包含文件头）
      * @param speed 播放速度，1.0 = 原始速度
+     * @param wavInfo WAV 文件信息，如果为 null 则使用默认的 PCM_HEADER_SIZE
      * @return 处理后的 WAV 文件数据（包含文件头）
      */
-    private fun processAudioWithSpeed(wavData: ByteArray, speed: Float): ByteArray {
-        val headerSize = PCM_HEADER_SIZE
+    private fun processAudioWithSpeed(wavData: ByteArray, speed: Float, wavInfo: WavFileInfo? = null): ByteArray {
+        val headerSize = wavInfo?.headerSize ?: PCM_HEADER_SIZE
         if (wavData.size <= headerSize) {
             Timber.tag(TAG).w("on processAudioWithSpeed: audio data too small")
             return wavData
